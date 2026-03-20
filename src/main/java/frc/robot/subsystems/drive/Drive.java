@@ -82,6 +82,7 @@ public class Drive extends SubsystemBase {
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs =
       new GyroIOInputsAutoLogged(); // ag - cant be resolved?? prob package issue..
+  // ag - figured it out... it just doesnt exist until build in build/ :'(
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
   private final SysIdRoutine sysId;
   private final Alert gyroDisconnectedAlert =
