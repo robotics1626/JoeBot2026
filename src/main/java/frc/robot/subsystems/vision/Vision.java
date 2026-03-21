@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.OptionalDouble;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
@@ -166,6 +167,35 @@ public class Vision extends SubsystemBase {
         "Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(new Pose3d[0]));
     Logger.recordOutput(
         "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
+  }
+
+  public OptionalDouble getLatestHubDistanceMeters() {
+    for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
+      var targetObservation = inputs[cameraIndex].latestTargetObservation;
+      if (!targetObservation.hasTarget() || !isHubTag(targetObservation.tagId())) {
+        continue;
+      }
+      if (Double.isFinite(targetObservation.distanceMeters())) {
+        return OptionalDouble.of(targetObservation.distanceMeters());
+      }
+    }
+    return OptionalDouble.empty();
+  }
+
+  /** Returns the latest target observation from any camera, if present. */
+  public java.util.Optional<frc.robot.subsystems.vision.VisionIO.TargetObservation>
+      getLatestTargetObservation() {
+    for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
+      var targetObservation = inputs[cameraIndex].latestTargetObservation;
+      if (targetObservation != null && targetObservation.hasTarget()) {
+        return java.util.Optional.of(targetObservation);
+      }
+    }
+    return java.util.Optional.empty();
+  }
+
+  private static boolean isHubTag(int tagId) {
+    return (tagId >= 2 && tagId <= 11) || (tagId >= 18 && tagId <= 27);
   }
 
   @FunctionalInterface

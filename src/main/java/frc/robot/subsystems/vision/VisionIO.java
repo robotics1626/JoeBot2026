@@ -1,9 +1,15 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
+// Copyright 2021-2025 Team 7587 Metuchen Momentum
+// https://github.com/frc-team7587
 //
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// version 3 as published by the Free Software Foundation or
+// available in the root directory of this project.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 package frc.robot.subsystems.vision;
 
@@ -16,13 +22,14 @@ public interface VisionIO {
   public static class VisionIOInputs {
     public boolean connected = false;
     public TargetObservation latestTargetObservation =
-        new TargetObservation(Rotation2d.kZero, Rotation2d.kZero);
+        new TargetObservation(false, -1, Double.NaN, new Rotation2d(), new Rotation2d());
     public PoseObservation[] poseObservations = new PoseObservation[0];
     public int[] tagIds = new int[0];
   }
 
-  /** Represents the angle to a simple target, not used for pose estimation. */
-  public static record TargetObservation(Rotation2d tx, Rotation2d ty) {}
+  /** Represents the latest tag observation for aiming. */
+  public static record TargetObservation(
+      boolean hasTarget, int tagId, double distanceMeters, Rotation2d tx, Rotation2d ty) {}
 
   /** Represents a robot pose sample used for pose estimation. */
   public static record PoseObservation(

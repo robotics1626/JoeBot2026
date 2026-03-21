@@ -21,7 +21,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.Constants;
-import frc.robot.subsystems.shooter.ShooterConstants.Positions;
+import org.littletonrobotics.junction.Logger;
 
 public class ShooterIOTalon implements ShooterIO {
   private final TalonFX mShooterLeader;
@@ -41,7 +41,9 @@ public class ShooterIOTalon implements ShooterIO {
         new Slot0Configs()
             .withKP(ShooterConstants.PID.kShooterP)
             .withKI(ShooterConstants.PID.kShooterI)
-            .withKD(ShooterConstants.PID.kShooterD);
+            .withKD(ShooterConstants.PID.kShooterD)
+            .withKS(ShooterConstants.PID.kShooterS)
+            .withKV(ShooterConstants.PID.kShooterV);
 
     BaseShooterConfigs.CurrentLimits =
         new CurrentLimitsConfigs()
@@ -79,6 +81,9 @@ public class ShooterIOTalon implements ShooterIO {
         new MotorOutputConfigs()
             .withNeutralMode(NeutralModeValue.Coast)
             .withInverted(InvertedValue.CounterClockwise_Positive);
+
+    var shroudConfigurator = mShroudController.getConfigurator();
+    shroudConfigurator.apply(BaseShroudConfigs);
   }
 
   @Override
@@ -94,9 +99,35 @@ public class ShooterIOTalon implements ShooterIO {
   @Override
   public void setSpeedRPM(double rpm) {
     var request = new VelocityVoltage(AngularVelocity.ofRelativeUnits(rpm, RPM));
-    mShooterLeader.setControl(request.withSlot(0).withFeedForward(.05));
+    double rps = AngularVelocity.ofRelativeUnits(rpm, RPM).in(RotationsPerSecond);
+    double feedForwardVolts = ShooterConstants.PID.kShooterV * rps;
+    mShooterLeader.setControl(request.withSlot(0).withFeedForward(feedForwardVolts));
     mShooterFollower.setControl(
         new Follower(mShooterLeader.getDeviceID(), MotorAlignmentValue.Opposed));
+
+    // Log control values for PID/VS tuning
+    try {
+      double measuredRpm = getLeaderRPM();
+      double errorRpm = rpm - measuredRpm;
+      double appliedVolts = Double.NaN;
+      try {
+        appliedVolts = mShooterLeader.getMotorVoltage().getValueAsDouble();
+      } catch (Exception ignored) {
+      }
+
+      Logger.recordOutput("Shooter/Control/TargetRPM", rpm);
+      Logger.recordOutput("Shooter/Control/FeedForwardVolts", feedForwardVolts);
+      Logger.recordOutput("Shooter/Control/KS", ShooterConstants.PID.kShooterS);
+      Logger.recordOutput("Shooter/Control/KV", ShooterConstants.PID.kShooterV);
+      Logger.recordOutput("Shooter/Control/KP", ShooterConstants.PID.kShooterP);
+      Logger.recordOutput("Shooter/Control/KI", ShooterConstants.PID.kShooterI);
+      Logger.recordOutput("Shooter/Control/KD", ShooterConstants.PID.kShooterD);
+      Logger.recordOutput("Shooter/Measured/LeaderRPM", measuredRpm);
+      Logger.recordOutput("Shooter/Control/ErrorRPM", errorRpm);
+      Logger.recordOutput("Shooter/Measured/LeaderAppliedVolts", appliedVolts);
+    } catch (Exception e) {
+      // Don't let logging interfere with control
+    }
   }
 
   @Override
@@ -110,20 +141,21 @@ public class ShooterIOTalon implements ShooterIO {
   }
 
   @Override
-  public void setShroud(Positions position) {
-    var request = new PositionVoltage(Angle.ofRelativeUnits(position.getDegrees(), Degrees));
-    mShroudController.setControl(request.withSlot(0).withFeedForward(.05));
+  public void setShroud(double degrees) {
+    var calculatedRotations = (Angle.ofRelativeUnits(degrees, Degrees)).in(Rotations) * 157.5;
+    var request = new PositionVoltage(Angle.ofRelativeUnits(calculatedRotations, Rotations));
+    mShroudController.setControl(request.withSlot(0).withFeedForward(calculatedRotations * .13));
   }
 
   @Override
   public void moveShroud(double degrees) {
     var lastRecordedPos = mShroudController.getPosition().getValue().in(Rotations);
     mShroudController.setControl(
-        new PositionVoltage(Angle.ofBaseUnits(degrees, Degrees).in(Rotations) + lastRecordedPos));
+        new PositionVoltage((lastRecordedPos + Angle.ofBaseUnits(degrees, Degrees).in(Rotations))));
   }
 
   @Override
   public double getShroud() {
-    return Rotations.of(mShroudController.getPosition().getValueAsDouble()).in(Degrees);
+    return Rotations.of(mShroudController.getPosition().getValueAsDouble()).in(Degrees) / 157.5;
   }
 }

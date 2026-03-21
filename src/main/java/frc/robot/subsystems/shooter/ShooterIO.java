@@ -41,7 +41,7 @@ public interface ShooterIO {
    *
    * @param degrees
    */
-  public void setShroud(ShooterConstants.Positions position);
+  public void setShroud(double degrees);
 
   /**
    * Move the shroud X degrees.

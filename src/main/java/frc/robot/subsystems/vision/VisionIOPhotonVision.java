@@ -42,14 +42,42 @@ public class VisionIOPhotonVision implements VisionIO {
     Set<Short> tagIds = new HashSet<>();
     List<PoseObservation> poseObservations = new LinkedList<>();
     for (var result : camera.getAllUnreadResults()) {
-      // Update latest target observation
+      // Update latest target observation to match new VisionIO.TargetObservation record
       if (result.hasTargets()) {
+        var best = result.getBestTarget();
+        int tagId = -1;
+        double distance = Double.NaN;
+        try {
+          // PhotonTrackedTarget exposes fiducialId and bestCameraToTarget in several versions
+          // Try to read the id and distance in a safe way.
+          tagId = best.fiducialId;
+        } catch (Exception e) {
+          try {
+            tagId = best.getFiducialId();
+          } catch (Exception e2) {
+            tagId = -1;
+          }
+        }
+        try {
+          distance = best.bestCameraToTarget.getTranslation().getNorm();
+        } catch (Exception e) {
+          try {
+            distance = best.getBestCameraToTarget().getTranslation().getNorm();
+          } catch (Exception e2) {
+            distance = Double.NaN;
+          }
+        }
+
         inputs.latestTargetObservation =
             new TargetObservation(
+                true,
+                tagId,
+                distance,
                 Rotation2d.fromDegrees(result.getBestTarget().getYaw()),
                 Rotation2d.fromDegrees(result.getBestTarget().getPitch()));
       } else {
-        inputs.latestTargetObservation = new TargetObservation(Rotation2d.kZero, Rotation2d.kZero);
+        inputs.latestTargetObservation =
+            new TargetObservation(false, -1, Double.NaN, Rotation2d.kZero, Rotation2d.kZero);
       }
 
       // Add pose observation
