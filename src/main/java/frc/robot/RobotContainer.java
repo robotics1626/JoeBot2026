@@ -21,6 +21,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.AlignHeadingToHub;
+import frc.robot.commands.AutoAimShooter;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HeadingDrive;
 import frc.robot.generated.TunerConstants;
@@ -41,6 +43,7 @@ import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -59,9 +62,26 @@ public class RobotContainer {
   private final Shooter shooter = new Shooter(new ShooterIOTalon());
   private final Intake intake = new Intake(new IntakeIOSpark());
   private final Indexer indexer = new Indexer(new IndexerIOTalon());
+  //   private final AutoAimShooter aimbot;
 
   private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-  private double MaxAngularRate = RotationsPerSecond.of(10).in(RadiansPerSecond); // No clue lol
+  private double MaxAngularRate = RotationsPerSecond.of(15).in(RadiansPerSecond); // No clue lol
+
+  public DoubleSupplier DebugRPMValue = () -> 1000;
+
+  // Testing variables for incremental shooter control
+  public double testShooterRPM = 3000.0;
+  private double testShroudDegrees = 0.0;
+  private static final double RPM_INCREMENT = 100.0;
+  private static final double SHROUD_INCREMENT = 1.0;
+  private static final double RPM_MIN = 0.0;
+  private static final double RPM_MAX = 6000.0;
+  private static final double SHROUD_MIN = 0.0;
+  private static final double SHROUD_MAX = 45.0;
+
+  // Joystick deadbands
+  private static final double LEFT_JOYSTICK_DEADBAND = 0.2;
+  private static final double RIGHT_JOYSTICK_DEADBAND = 0.5;
 
   // Controllers
   private final CommandXboxController driver = new CommandXboxController(0);
@@ -88,6 +108,8 @@ public class RobotContainer {
             new Vision(
                 drive::addVisionMeasurement,
                 new VisionIOPhotonVision("GiggleCam", VisionConstants.robotToCamera0));
+
+        // aimbot = new AutoAimShooter(drive, vision, shooter);
         // The ModuleIOTalonFXS implementation provides an example implementation for
         // TalonFXS controller connected to a CANdi with a PWM encoder. The
         // implementations
@@ -122,6 +144,8 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOPhotonVisionSim(
                     "GiggleCam", VisionConstants.robotToCamera0, drive::getPose));
+
+        // aimbot = new AutoAimShooter(drive, vision, shooter);
         break;
 
       default:
@@ -135,6 +159,7 @@ public class RobotContainer {
                 new ModuleIO() {});
         // (Use same number of dummy implementations as the real robot)
         vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
+        // aimbot = new AutoAimShooter(drive, vision, shooter);
         break;
     }
 
@@ -162,6 +187,32 @@ public class RobotContainer {
   }
 
   /**
+   * Apply deadband to left joystick input (0.2 deadband). Values within the deadband are set to 0,
+   * values outside are scaled from 0 to 1.
+   */
+  private double applyLeftDeadband(double value) {
+    if (Math.abs(value) < LEFT_JOYSTICK_DEADBAND) {
+      return 0.0;
+    }
+    // Scale from [deadband, 1] to [0, 1]
+    return Math.copySign(
+        (Math.abs(value) - LEFT_JOYSTICK_DEADBAND) / (1.0 - LEFT_JOYSTICK_DEADBAND), value);
+  }
+
+  /**
+   * Apply deadband to right joystick input (0.5 deadband). Values within the deadband are set to 0,
+   * values outside are scaled from 0 to 1.
+   */
+  private double applyRightDeadband(double value) {
+    if (Math.abs(value) < RIGHT_JOYSTICK_DEADBAND) {
+      return 0.0;
+    }
+    // Scale from [deadband, 1] to [0, 1]
+    return Math.copySign(
+        (Math.abs(value) - RIGHT_JOYSTICK_DEADBAND) / (1.0 - RIGHT_JOYSTICK_DEADBAND), value);
+  }
+
+  /**
    * Use this method to define your button->command mappings. Buttons can be created by
    * instantiating a {@link GenericHID} or one of its subclasses ({@link
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
@@ -179,7 +230,10 @@ public class RobotContainer {
         .a()
         .whileTrue(
             DriveCommands.joystickDriveAtAngle(
-                drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> Rotation2d.kZero));
+                drive,
+                () -> -applyLeftDeadband(driver.getLeftY()),
+                () -> -applyLeftDeadband(driver.getLeftX()),
+                () -> Rotation2d.kZero));
 
     // Switch to X pattern when X button is pressed
     driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
@@ -188,15 +242,15 @@ public class RobotContainer {
         .whileTrue(
             new HeadingDrive(
                 drive,
-                () -> driver.getLeftX(),
-                () -> driver.getLeftY(),
-                () -> -driver.getRightX(),
-                () -> -driver.getRightY(),
+                () -> applyLeftDeadband(driver.getLeftX()),
+                () -> applyLeftDeadband(driver.getLeftY()),
+                () -> -applyRightDeadband(driver.getRightX()),
+                () -> -applyRightDeadband(driver.getRightY()),
                 MaxSpeed,
                 MaxAngularRate,
                 90));
 
-    // Reset gyro to 0° when B button is pressed
+    // Reset gyro to 0° when B button is pressed
     driver
         .b()
         .onTrue(
@@ -209,10 +263,31 @@ public class RobotContainer {
         .onTrue(
             new HeadingDrive(
                 drive,
-                () -> driver.getLeftX(),
-                () -> driver.getLeftY(),
-                () -> -driver.getRightX(),
-                () -> -driver.getRightY(),
+                () -> applyLeftDeadband(driver.getLeftX()),
+                () -> applyLeftDeadband(driver.getLeftY()),
+                () -> -applyRightDeadband(driver.getRightX()),
+                () -> -applyRightDeadband(driver.getRightY()),
+                MaxSpeed,
+                MaxAngularRate,
+                90));
+
+    // driver.rightTrigger().whileTrue(aimbot);
+    // Right trigger: align to hub using AlignToPose
+    driver
+        .rightTrigger()
+        .whileTrue(
+            new AlignHeadingToHub(
+                drive,
+                () -> -applyLeftDeadband(driver.getLeftY()),
+                () -> -applyLeftDeadband(driver.getLeftX()),
+                true))
+        .onFalse(
+            new HeadingDrive(
+                drive,
+                () -> applyLeftDeadband(driver.getLeftX()),
+                () -> applyLeftDeadband(driver.getLeftY()),
+                () -> -applyRightDeadband(driver.getRightX()),
+                () -> -applyRightDeadband(driver.getRightY()),
                 MaxSpeed,
                 MaxAngularRate,
                 90));
@@ -220,12 +295,17 @@ public class RobotContainer {
     /// Operator
     operator.b().whileTrue(indexer.index().alongWith(intake.intake()));
 
-    operator.rightTrigger().whileTrue(shooter.shoot(3000));
+    // operator.rightTrigger().whileTrue(shooter.shoot(3000));
+    operator.rightTrigger().whileTrue(new AutoAimShooter(drive, vision, shooter));
 
     operator.x().whileTrue(shooter.shoot(4000));
     operator.y().whileTrue(shooter.shoot(6000));
 
     operator.leftBumper().whileTrue(indexer.ohShit().alongWith(intake.out()));
+
+    operator
+        .leftTrigger()
+        .whileTrue(indexer.indexFlow().alongWith(intake.intake()).alongWith(shooter.shoot(4500)));
 
     // make the justIndexer and the feed command run together w/ out the feedtoshooter command
 
@@ -242,6 +322,44 @@ public class RobotContainer {
     operator.povLeft().onTrue(shooter.shroud(0));
 
     operator.povRight().onTrue(shooter.shroud(13));
+
+    // Testing buttons: increment/decrement shooter RPM
+    operator
+        .start()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShooterRPM = Math.min(testShooterRPM + RPM_INCREMENT, RPM_MAX);
+                  shooter.shoot(testShooterRPM).schedule();
+                }));
+
+    operator
+        .back()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShooterRPM = Math.max(testShooterRPM - RPM_INCREMENT, RPM_MIN);
+                  shooter.shoot(testShooterRPM).schedule();
+                }));
+
+    // Testing buttons: increment/decrement shroud angle
+    operator
+        .a()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShroudDegrees = Math.min(testShroudDegrees + SHROUD_INCREMENT, SHROUD_MAX);
+                  shooter.shroud(testShroudDegrees).schedule();
+                }));
+
+    operator
+        .y()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShroudDegrees = Math.max(testShroudDegrees - SHROUD_INCREMENT, SHROUD_MIN);
+                  shooter.shroud(testShroudDegrees).schedule();
+                }));
   }
 
   /**

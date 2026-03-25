@@ -16,7 +16,7 @@ public class IntakeIOSpark implements IntakeIO {
 
     var leaderConfigs = new SparkMaxConfig();
     leaderConfigs.inverted(false);
-    // leaderConfigs.smartCurrentLimit(30);
+    leaderConfigs.smartCurrentLimit(60);
 
     intakeLeader.configure(
         leaderConfigs, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -24,7 +24,7 @@ public class IntakeIOSpark implements IntakeIO {
     var followerConfigs = new SparkMaxConfig();
     followerConfigs.inverted(true);
     followerConfigs.follow(intakeLeader, true);
-    // followerConfigs.smartCurrentLimit(30);
+    followerConfigs.smartCurrentLimit(60);
   }
 
   @Override

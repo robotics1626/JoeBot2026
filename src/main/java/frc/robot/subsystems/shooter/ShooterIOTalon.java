@@ -39,9 +39,9 @@ public class ShooterIOTalon implements ShooterIO {
     var BaseShooterConfigs = new TalonFXConfiguration();
     BaseShooterConfigs.Slot0 =
         new Slot0Configs()
-            .withKP(ShooterConstants.PID.kShooterP)
-            .withKI(ShooterConstants.PID.kShooterI)
-            .withKD(ShooterConstants.PID.kShooterD)
+            // .withKP(ShooterConstants.PID.kShooterOldP)
+            // .withKI(ShooterConstants.PID.kShooterOldI)
+            // .withKD(ShooterConstants.PID.kShooterOldD)
             .withKS(ShooterConstants.PID.kShooterS)
             .withKV(ShooterConstants.PID.kShooterV);
 

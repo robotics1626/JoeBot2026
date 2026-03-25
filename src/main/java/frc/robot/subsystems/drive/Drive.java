@@ -183,7 +183,14 @@ public class Drive extends SubsystemBase {
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
+        SwerveModulePosition position = modules[moduleIndex].getOdometryPositions()[i];
+        // Negate distance only on red alliance (field-relative coordinate flip)
+        double distanceMeters = position.distanceMeters;
+        if (DriverStation.getAlliance().isPresent()
+            && DriverStation.getAlliance().get() == Alliance.Red) {
+          distanceMeters = -distanceMeters;
+        }
+        modulePositions[moduleIndex] = new SwerveModulePosition(distanceMeters, position.angle);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters

@@ -33,11 +33,16 @@ public final class ShooterConstants {
 
   /** Motor PIDs. */
   public final class PID {
-    public static final double kShooterP = 6.7d; // 5.5
-    public static final double kShooterI = 0.0069d;
-    public static final double kShooterD = 0.03d; // 0.151
-    public static final double kShooterS = 0.05d;
-    public static final double kShooterV = 0.13d;
+    public static final double kShooterOldP = 6.7d; // 5.5
+    public static final double kShooterOldI = 0.0069d;
+    public static final double kShooterOldD = 0.03d; // 0.151
+
+    public static final double kShooterP = 0d; // 5.5
+    public static final double kShooterI = 0.d;
+    public static final double kShooterD = 0d; // 0.151
+
+    public static final double kShooterS = 0.9d;
+    public static final double kShooterV = 0.034d;
 
     public static final double kShroudP = 1.75d;
     public static final double kShroudI = 0.0d;
@@ -55,16 +60,17 @@ public final class ShooterConstants {
   }
 
   public final class AutoAim {
-    public static final double kVisionDistanceScale = 1.0d; // Tuning parameter for vision distance; may need to be adjusted based on real-world testing
-    public static final double kVisionDistanceBiasMeters = 0.0d; // Tuning parameter for vision distance; may need to be adjusted based on real-world testing
+    public static final double kVisionDistanceScale =
+        1.0d; // Tuning parameter for vision distance; may need to be adjusted based on real-world
+    // testing
+    public static final double kVisionDistanceBiasMeters =
+        0.0d; // Tuning parameter for vision distance; may need to be adjusted based on real-world
+    // testing
 
-    public static final double[] kDistanceMeters =
-    {};
+    public static final double[] kDistanceMeters = {.86, 2.94, 4.72, 5.73};
 
-    public static final double[] kPivotPosition =
-    {};
+    public static final double[] kPivotPosition = {11 / 5, 22 / 5, 33 / 5, 42 / 5};
 
-    public static final double[] kShooterTargetRpm =
-    {};
+    public static final double[] kShooterTargetRpm = {2800, 3400, 3750, 3950};
   }
 }

@@ -110,7 +110,8 @@ public class Vision extends SubsystemBase {
         // Add pose to log
         robotPoses.add(observation.pose());
         if (rejectPose) {
-          robotPosesRejected.add(observation.pose());
+          // robotPosesRejected.add(observation.pose());
+          robotPosesAccepted.add(observation.pose());
         } else {
           robotPosesAccepted.add(observation.pose());
         }
@@ -139,6 +140,22 @@ public class Vision extends SubsystemBase {
             observation.pose().toPose2d(),
             observation.timestamp(),
             VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev));
+      }
+
+      // Log target observation metrics
+      var targetObs = inputs[cameraIndex].latestTargetObservation;
+      if (targetObs != null && targetObs.hasTarget()) {
+        Logger.recordOutput(
+            "Vision/Camera" + Integer.toString(cameraIndex) + "/TargetTagId", targetObs.tagId());
+        Logger.recordOutput(
+            "Vision/Camera" + Integer.toString(cameraIndex) + "/TargetDistance",
+            targetObs.distanceMeters());
+        Logger.recordOutput(
+            "Vision/Camera" + Integer.toString(cameraIndex) + "/TargetTx",
+            targetObs.tx().getDegrees());
+        Logger.recordOutput(
+            "Vision/Camera" + Integer.toString(cameraIndex) + "/TargetTy",
+            targetObs.ty().getDegrees());
       }
 
       // Log camera metadata
@@ -172,7 +189,9 @@ public class Vision extends SubsystemBase {
   public OptionalDouble getLatestHubDistanceMeters() {
     for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
       var targetObservation = inputs[cameraIndex].latestTargetObservation;
-      if (!targetObservation.hasTarget() || !isHubTag(targetObservation.tagId())) {
+      if (targetObservation == null
+          || !targetObservation.hasTarget()
+          || !isHubTag(targetObservation.tagId())) {
         continue;
       }
       if (Double.isFinite(targetObservation.distanceMeters())) {

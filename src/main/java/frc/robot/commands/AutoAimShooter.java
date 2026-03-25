@@ -1,8 +1,5 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Rotations;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -76,15 +73,13 @@ public class AutoAimShooter extends Command {
 
     double shooterTargetRpm = shooterRpmMap.get(clampedDistance);
 
-    shooter.shroud(Rotations.of(pivotSetpoint).in(Degrees));
-    // shootertuned(shooterTargetRpm);
+    // Directly set shooter values (don't use Commands since this command already owns shooter)
+    shooter.setShroudDegrees(pivotSetpoint);
 
+    // Clamp shooter RPM to valid range
     double clampedRpm =
-        MathUtil.clamp(
-            shooterTargetRpm,
-            -ShooterConstants.Control.kDashboardMaxTargetRpm,
-            ShooterConstants.Control.kDashboardMaxTargetRpm);
-    shooter.shoot(clampedRpm);
+        MathUtil.clamp(shooterTargetRpm, 0.0, ShooterConstants.Control.kDashboardMaxTargetRpm);
+    shooter.setShooterRPM(clampedRpm);
     // Log core fields used for creating interpolation tables
     Logger.recordOutput("Shooter/AutoAim/Timestamp", Timer.getFPGATimestamp());
     Logger.recordOutput("Shooter/AutoAim/UsingVisionDistance", usingVisionDistance);

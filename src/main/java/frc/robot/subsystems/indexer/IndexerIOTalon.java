@@ -29,7 +29,7 @@ public class IndexerIOTalon implements IndexerIO {
 
     BaseIndexerConfigs.CurrentLimits =
         new CurrentLimitsConfigs()
-            .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
+            .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
             .withSupplyCurrentLimitEnable(true);
 
     mIndexer.getConfigurator().apply(BaseIndexerConfigs);
@@ -42,7 +42,7 @@ public class IndexerIOTalon implements IndexerIO {
 
     BaseFeederConfigs.CurrentLimits =
         new CurrentLimitsConfigs()
-            .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
+            .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
             .withSupplyCurrentLimitEnable(true);
 
     mFeeder.getConfigurator().apply(BaseFeederConfigs);

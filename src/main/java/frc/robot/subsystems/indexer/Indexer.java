@@ -13,8 +13,20 @@ public class Indexer extends SubsystemBase {
   public Command index() {
     return startEnd(
         () -> {
-          mIndexer.setSpeed(45);
-          mIndexer.setFeeder(-20);
+          mIndexer.setSpeed(.40);
+          mIndexer.setFeeder(-.20);
+        },
+        () -> {
+          mIndexer.setSpeed(0);
+          mIndexer.setFeeder(0);
+        });
+  }
+
+  public Command indexFlow() {
+    return startEnd(
+        () -> {
+          mIndexer.setSpeed(.40);
+          mIndexer.setFeeder(.20);
         },
         () -> {
           mIndexer.setSpeed(0);
@@ -23,11 +35,11 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command justIndexer() {
-    return startEnd(() -> mIndexer.setSpeed(45), () -> mIndexer.setSpeed(0));
+    return startEnd(() -> mIndexer.setSpeed(.40), () -> mIndexer.setSpeed(0));
   }
 
   public Command justIndexerRunOnce() {
-    return runOnce(() -> mIndexer.setSpeed(45));
+    return runOnce(() -> mIndexer.setSpeed(.40));
   }
 
   public Command stopJustIndexerRunOnce() {
@@ -35,11 +47,11 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command feed() {
-    return startEnd(() -> mIndexer.setFeeder(20), () -> mIndexer.setFeeder(0));
+    return startEnd(() -> mIndexer.setFeeder(.20), () -> mIndexer.setFeeder(0));
   }
 
   public Command feedRunOnce() {
-    return runOnce(() -> mIndexer.setFeeder(20));
+    return runOnce(() -> mIndexer.setFeeder(.20));
   }
 
   public Command stopFeedRunOnce() {
@@ -47,6 +59,6 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command ohShit() {
-    return startEnd(() -> mIndexer.setSpeed(-45), () -> mIndexer.setSpeed(0));
+    return startEnd(() -> mIndexer.setSpeed(-.40), () -> mIndexer.setSpeed(0));
   }
 }

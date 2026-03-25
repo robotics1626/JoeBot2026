@@ -62,9 +62,9 @@ public class TunerConstants {
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(60) // Higher for drive
+                  .withStatorCurrentLimit(Amps.of(20)) // Higher for drive
                   .withStatorCurrentLimitEnable(false)
-                  .withSupplyCurrentLimit(40)
+                  .withSupplyCurrentLimit(Amps.of(20))
                   .withSupplyCurrentLimitEnable(true));
   // .withSupplyCurrentLowerLimit(40)
   /*.withSupplyCurrentLowerTime(1.0))*/
@@ -77,9 +77,9 @@ public class TunerConstants {
                   // stator current limit to help avoid brownouts without impacting performance.
                   // .withStatorCurrentLimit(Amps.of(60))
                   // .withStatorCurrentLimitEnable(true));
-                  .withStatorCurrentLimit(50) // amps
+                  .withStatorCurrentLimit(Amps.of(20)) // amps
                   .withStatorCurrentLimitEnable(false)
-                  .withSupplyCurrentLimit(35) // amps
+                  .withSupplyCurrentLimit(Amps.of(20)) // amps
                   .withSupplyCurrentLimitEnable(true));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
@@ -91,7 +91,7 @@ public class TunerConstants {
 
   // Theoretical free speed (m/s) at 12 V applied output;
   // This needs to be tuned to your individual robot
-  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(14.4);
+  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(16);
 
   // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
   // This may need to be tuned to your individual robot

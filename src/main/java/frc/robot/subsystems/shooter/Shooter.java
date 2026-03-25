@@ -27,6 +27,15 @@ public class Shooter extends SubsystemBase {
     return runOnce(() -> mShooter.moveShroud(degrees));
   }
 
+  // Direct control methods for AutoAimShooter (without returning commands)
+  public void setShooterRPM(double rpm) {
+    mShooter.setSpeedRPM(rpm);
+  }
+
+  public void setShroudDegrees(double degrees) {
+    mShooter.setShroud(degrees);
+  }
+
   public double getShroud() {
     return mShooter.getShroud();
   }
