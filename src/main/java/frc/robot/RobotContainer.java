@@ -25,6 +25,7 @@ import frc.robot.commands.AlignHeadingToHub;
 import frc.robot.commands.AutoAimShooter;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HeadingDrive;
+import frc.robot.commands.RumbleControllers;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -47,327 +48,315 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
+ * This class is where the bulk of the robot should be declared. Since
+ * Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in
+ * the {@link Robot}
+ * periodic methods (other than the scheduler calls). Instead, the structure of
+ * the robot (including
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
-  // Subsystems
-  private final Drive drive;
+    // Subsystems
+    private final Drive drive;
 
-  @SuppressWarnings("unused")
-  private final Vision vision;
+    // @SuppressWarnings("unused") //
+    private final Vision vision;
 
-  private final Shooter shooter = new Shooter(new ShooterIOTalon());
-  private final Intake intake = new Intake(new IntakeIOSpark());
-  private final Indexer indexer = new Indexer(new IndexerIOTalon());
-  //   private final AutoAimShooter aimbot;
+    private final Shooter shooter = new Shooter(new ShooterIOTalon());
+    private final Intake intake = new Intake(new IntakeIOSpark());
+    private final Indexer indexer = new Indexer(new IndexerIOTalon());
+    // private final AutoAimShooter aimbot;
 
-  private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-  private double MaxAngularRate = RotationsPerSecond.of(15).in(RadiansPerSecond); // No clue lol
+    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    private double MaxAngularRate = RotationsPerSecond.of(15).in(RadiansPerSecond);
 
-  public DoubleSupplier DebugRPMValue = () -> 1000;
+    public DoubleSupplier DebugRPMValue = () -> 1000;
 
-  // Testing variables for incremental shooter control
-  public double testShooterRPM = 3000.0;
-  private double testShroudDegrees = 0.0;
-  private static final double RPM_INCREMENT = 100.0;
-  private static final double SHROUD_INCREMENT = 1.0;
-  private static final double RPM_MIN = 0.0;
-  private static final double RPM_MAX = 6000.0;
-  private static final double SHROUD_MIN = 0.0;
-  private static final double SHROUD_MAX = 45.0;
+    // Testing variables for incremental shooter control
+    public double testShooterRPM = 3000.0;
+    private static final double RPM_INCREMENT = 100.0;
+    private static final double RPM_MIN = 0.0;
+    private static final double RPM_MAX = 6000.0;
 
-  // Joystick deadbands
-  private static final double LEFT_JOYSTICK_DEADBAND = 0.2;
-  private static final double RIGHT_JOYSTICK_DEADBAND = 0.5;
+    // Joystick deadbands
+    private static final double LEFT_JOYSTICK_DEADBAND = 0.2;
+    private static final double RIGHT_JOYSTICK_DEADBAND = 0.5;
 
-  // Controllers
-  private final CommandXboxController driver = new CommandXboxController(0);
-  private final CommandXboxController operator = new CommandXboxController(1);
+    // Controllers
+    private final CommandXboxController driver = new CommandXboxController(0);
+    private final CommandXboxController operator = new CommandXboxController(1);
 
-  // Dashboard inputs
-  private final LoggedDashboardChooser<Command> autoChooser;
+    // Dashboard inputs
+    private final LoggedDashboardChooser<Command> autoChooser;
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer() {
-    switch (Constants.currentMode) {
-      case REAL:
-        // Real robot, instantiate hardware IO implementations
-        // ModuleIOTalonFX is intended for modules with TalonFX drive, TalonFX turn, and
-        // a CANcoder
-        drive =
-            new Drive(
-                new GyroIOPigeon2(),
-                new ModuleIOTalonFX(TunerConstants.FrontLeft),
-                new ModuleIOTalonFX(TunerConstants.FrontRight),
-                new ModuleIOTalonFX(TunerConstants.BackLeft),
-                new ModuleIOTalonFX(TunerConstants.BackRight));
-        vision =
-            new Vision(
-                drive::addVisionMeasurement,
-                new VisionIOPhotonVision("GiggleCam", VisionConstants.robotToCamera0));
+    /**
+     * The container for the robot. Contains subsystems, OI devices, and commands.
+     */
+    public RobotContainer() {
+        switch (Constants.currentMode) {
+            case REAL:
+                // Real robot, instantiate hardware IO implementations
+                // ModuleIOTalonFX is intended for modules with TalonFX drive, TalonFX turn, and
+                // a CANcoder
+                drive = new Drive(
+                        new GyroIOPigeon2(),
+                        new ModuleIOTalonFX(TunerConstants.FrontLeft),
+                        new ModuleIOTalonFX(TunerConstants.FrontRight),
+                        new ModuleIOTalonFX(TunerConstants.BackLeft),
+                        new ModuleIOTalonFX(TunerConstants.BackRight));
+                vision = new Vision(
+                        drive::addVisionMeasurement,
+                        new VisionIOPhotonVision("GiggleCam", VisionConstants.robotToCamera0));
 
-        // aimbot = new AutoAimShooter(drive, vision, shooter);
-        // The ModuleIOTalonFXS implementation provides an example implementation for
-        // TalonFXS controller connected to a CANdi with a PWM encoder. The
-        // implementations
-        // of ModuleIOTalonFX, ModuleIOTalonFXS, and ModuleIOSpark (from the Spark
-        // swerve
-        // template) can be freely intermixed to support alternative hardware
-        // arrangements.
-        // Please see the AdvantageKit template documentation for more information:
-        // https://docs.advantagekit.org/getting-started/template-projects/talonfx-swerve-template#custom-module-implementations
-        //
-        // drive =
-        // new Drive(
-        // new GyroIOPigeon2(),
-        // new ModuleIOTalonFXS(TunerConstants.FrontLeft),
-        // new ModuleIOTalonFXS(TunerConstants.FrontRight),
-        // new ModuleIOTalonFXS(TunerConstants.BackLeft),
-        // new ModuleIOTalonFXS(TunerConstants.BackRight));
-        break;
+                // aimbot = new AutoAimShooter(drive, vision, shooter);
+                // The ModuleIOTalonFXS implementation provides an example implementation for
+                // TalonFXS controller connected to a CANdi with a PWM encoder. The
+                // implementations
+                // of ModuleIOTalonFX, ModuleIOTalonFXS, and ModuleIOSpark (from the Spark
+                // swerve
+                // template) can be freely intermixed to support alternative hardware
+                // arrangements.
+                // Please see the AdvantageKit template documentation for more information:
+                // https://docs.advantagekit.org/getting-started/template-projects/talonfx-swerve-template#custom-module-implementations
+                //
+                // drive =
+                // new Drive(
+                // new GyroIOPigeon2(),
+                // new ModuleIOTalonFXS(TunerConstants.FrontLeft),
+                // new ModuleIOTalonFXS(TunerConstants.FrontRight),
+                // new ModuleIOTalonFXS(TunerConstants.BackLeft),
+                // new ModuleIOTalonFXS(TunerConstants.BackRight));
+                break;
 
-      case SIM:
-        // Sim robot, instantiate physics sim IO implementations
-        drive =
-            new Drive(
-                new GyroIO() {},
-                new ModuleIOSim(TunerConstants.FrontLeft),
-                new ModuleIOSim(TunerConstants.FrontRight),
-                new ModuleIOSim(TunerConstants.BackLeft),
-                new ModuleIOSim(TunerConstants.BackRight));
-        // Sim robot, instantiate physics sim IO implementations
-        vision =
-            new Vision(
-                drive::addVisionMeasurement,
-                new VisionIOPhotonVisionSim(
-                    "GiggleCam", VisionConstants.robotToCamera0, drive::getPose));
+            case SIM:
+                // Sim robot, instantiate physics sim IO implementations
+                drive = new Drive(
+                        new GyroIO() {
+                        },
+                        new ModuleIOSim(TunerConstants.FrontLeft),
+                        new ModuleIOSim(TunerConstants.FrontRight),
+                        new ModuleIOSim(TunerConstants.BackLeft),
+                        new ModuleIOSim(TunerConstants.BackRight));
+                // Sim robot, instantiate physics sim IO implementations
+                vision = new Vision(
+                        drive::addVisionMeasurement,
+                        new VisionIOPhotonVisionSim(
+                                "GiggleCam", VisionConstants.robotToCamera0, drive::getPose));
 
-        // aimbot = new AutoAimShooter(drive, vision, shooter);
-        break;
+                // aimbot = new AutoAimShooter(drive, vision, shooter);
+                break;
 
-      default:
-        // Replayed robot, disable IO implementations
-        drive =
-            new Drive(
-                new GyroIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {});
-        // (Use same number of dummy implementations as the real robot)
-        vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
-        // aimbot = new AutoAimShooter(drive, vision, shooter);
-        break;
+            default:
+                // Replayed robot, disable IO implementations
+                drive = new Drive(
+                        new GyroIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        });
+                // (Use same number of dummy implementations as the real robot)
+                vision = new Vision(drive::addVisionMeasurement, new VisionIO() {
+                }, new VisionIO() {
+                });
+                // aimbot = new AutoAimShooter(drive, vision, shooter);
+                break;
+        }
+
+        // Set up auto routines
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
+
+        // Set up SysId routines
+        autoChooser.addOption(
+                "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
+        autoChooser.addOption(
+                "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
+        autoChooser.addOption(
+                "Drive SysId (Quasistatic Forward)",
+                drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+                "Drive SysId (Quasistatic Reverse)",
+                drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+                "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+                "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+
+        // Configure the button bindings
+        configureButtonBindings();
     }
 
-    // Set up auto routines
-    autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-
-    // Set up SysId routines
-    autoChooser.addOption(
-        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    autoChooser.addOption(
-        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-
-    // Configure the button bindings
-    configureButtonBindings();
-  }
-
-  /**
-   * Apply deadband to left joystick input (0.2 deadband). Values within the deadband are set to 0,
-   * values outside are scaled from 0 to 1.
-   */
-  private double applyLeftDeadband(double value) {
-    if (Math.abs(value) < LEFT_JOYSTICK_DEADBAND) {
-      return 0.0;
+    /**
+     * Apply deadband to left joystick input (0.2 deadband). Values within the
+     * deadband are set to 0,
+     * values outside are scaled from 0 to 1.
+     */
+    private double applyLeftDeadband(double value) {
+        if (Math.abs(value) < LEFT_JOYSTICK_DEADBAND) {
+            return 0.0;
+        }
+        return Math.copySign(
+                (Math.abs(value) - LEFT_JOYSTICK_DEADBAND) / (1.0 - LEFT_JOYSTICK_DEADBAND), value);
     }
-    // Scale from [deadband, 1] to [0, 1]
-    return Math.copySign(
-        (Math.abs(value) - LEFT_JOYSTICK_DEADBAND) / (1.0 - LEFT_JOYSTICK_DEADBAND), value);
-  }
 
-  /**
-   * Apply deadband to right joystick input (0.5 deadband). Values within the deadband are set to 0,
-   * values outside are scaled from 0 to 1.
-   */
-  private double applyRightDeadband(double value) {
-    if (Math.abs(value) < RIGHT_JOYSTICK_DEADBAND) {
-      return 0.0;
+    /**
+     * Apply deadband to right joystick input (0.5 deadband). Values within the
+     * deadband are set to 0,
+     * values outside are scaled from 0 to 1.
+     */
+    private double applyRightDeadband(double value) {
+        if (Math.abs(value) < RIGHT_JOYSTICK_DEADBAND) {
+            return 0.0;
+        }
+        return Math.copySign(
+                (Math.abs(value) - RIGHT_JOYSTICK_DEADBAND) / (1.0 - RIGHT_JOYSTICK_DEADBAND), value);
     }
-    // Scale from [deadband, 1] to [0, 1]
-    return Math.copySign(
-        (Math.abs(value) - RIGHT_JOYSTICK_DEADBAND) / (1.0 - RIGHT_JOYSTICK_DEADBAND), value);
-  }
 
-  /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-   */
-  private void configureButtonBindings() {
-    // Default command, normal field-relative drive
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDrive(
-    //         drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () ->
-    // -driver.getRightX()));
+    /**
+     * Use this method to define your button->command mappings. Buttons can be
+     * created by
+     * instantiating a {@link GenericHID} or one of its subclasses ({@link
+     * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing
+     * it to a {@link
+     * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+     */
+    private void configureButtonBindings() {
+        // Default command, normal field-relative drive
+        // drive.setDefaultCommand(
+        // DriveCommands.joystickDrive(
+        // drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () ->
+        // -driver.getRightX()));
 
-    // Lock to 0° when A button is held
-    driver
-        .a()
-        .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                drive,
-                () -> -applyLeftDeadband(driver.getLeftY()),
-                () -> -applyLeftDeadband(driver.getLeftX()),
-                () -> Rotation2d.kZero));
+        // Lock to 0° when A button is held
+        driver
+                .a()
+                .whileTrue(
+                        DriveCommands.joystickDriveAtAngle(
+                                drive,
+                                () -> -applyLeftDeadband(driver.getLeftY()),
+                                () -> -applyLeftDeadband(driver.getLeftX()),
+                                () -> Rotation2d.kZero));
 
-    // Switch to X pattern when X button is pressed
-    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+        // Switch to X pattern when X button is pressed
+        driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
-    RobotModeTriggers.teleop()
-        .whileTrue(
-            new HeadingDrive(
-                drive,
-                () -> applyLeftDeadband(driver.getLeftX()),
-                () -> applyLeftDeadband(driver.getLeftY()),
-                () -> -applyRightDeadband(driver.getRightX()),
-                () -> -applyRightDeadband(driver.getRightY()),
-                MaxSpeed,
-                MaxAngularRate,
-                90));
+        RobotModeTriggers.teleop()
+                .whileTrue(
+                        new HeadingDrive(
+                                drive,
+                                () -> applyLeftDeadband(driver.getLeftX()),
+                                () -> applyLeftDeadband(driver.getLeftY()),
+                                () -> -applyRightDeadband(driver.getRightX()),
+                                () -> -applyRightDeadband(driver.getRightY()),
+                                MaxSpeed,
+                                MaxAngularRate,
+                                90));
 
-    // Reset gyro to 0° when B button is pressed
-    driver
-        .b()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-                    drive)
-                .ignoringDisable(true))
-        .onTrue(
-            new HeadingDrive(
-                drive,
-                () -> applyLeftDeadband(driver.getLeftX()),
-                () -> applyLeftDeadband(driver.getLeftY()),
-                () -> -applyRightDeadband(driver.getRightX()),
-                () -> -applyRightDeadband(driver.getRightY()),
-                MaxSpeed,
-                MaxAngularRate,
-                90));
+        // Reset gyro to 0° when B button is pressed
+        driver
+                .b()
+                .onTrue(
+                        Commands.runOnce(
+                                () -> drive.setPose(
+                                        new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+                                drive)
+                                .ignoringDisable(true))
+                .onTrue(
+                        new HeadingDrive(
+                                drive,
+                                () -> applyLeftDeadband(driver.getLeftX()),
+                                () -> applyLeftDeadband(driver.getLeftY()),
+                                () -> -applyRightDeadband(driver.getRightX()),
+                                () -> -applyRightDeadband(driver.getRightY()),
+                                MaxSpeed,
+                                MaxAngularRate,
+                                90));
 
-    // driver.rightTrigger().whileTrue(aimbot);
-    // Right trigger: align to hub using AlignToPose
-    driver
-        .rightTrigger()
-        .whileTrue(
-            new AlignHeadingToHub(
-                drive,
-                () -> -applyLeftDeadband(driver.getLeftY()),
-                () -> -applyLeftDeadband(driver.getLeftX()),
-                true))
-        .onFalse(
-            new HeadingDrive(
-                drive,
-                () -> applyLeftDeadband(driver.getLeftX()),
-                () -> applyLeftDeadband(driver.getLeftY()),
-                () -> -applyRightDeadband(driver.getRightX()),
-                () -> -applyRightDeadband(driver.getRightY()),
-                MaxSpeed,
-                MaxAngularRate,
-                90));
+        // driver.rightTrigger().whileTrue(aimbot);
+        // Right trigger: align to hub using AlignToPose
+        driver
+                .rightTrigger()
+                .whileTrue(
+                        new AlignHeadingToHub(
+                                drive,
+                                () -> -applyLeftDeadband(driver.getLeftY()),
+                                () -> -applyLeftDeadband(driver.getLeftX()),
+                                true))
+                .onFalse(
+                        new HeadingDrive(
+                                drive,
+                                () -> applyLeftDeadband(driver.getLeftX()),
+                                () -> applyLeftDeadband(driver.getLeftY()),
+                                () -> -applyRightDeadband(driver.getRightX()),
+                                () -> -applyRightDeadband(driver.getRightY()),
+                                MaxSpeed,
+                                MaxAngularRate,
+                                90));
 
-    /// Operator
-    operator.b().whileTrue(indexer.index().alongWith(intake.intake()));
+        /// Operator
+        operator.b().whileTrue(indexer.index().alongWith(intake.intake()));
 
-    // operator.rightTrigger().whileTrue(shooter.shoot(3000));
-    operator.rightTrigger().whileTrue(new AutoAimShooter(drive, vision, shooter));
+        // operator.rightTrigger().whileTrue(shooter.shoot(3000));
+        operator.rightTrigger().whileTrue(
+                new AutoAimShooter(drive, vision, shooter).alongWith(new RumbleControllers(operator, driver)));
 
-    operator.x().whileTrue(shooter.shoot(4000));
-    operator.y().whileTrue(shooter.shoot(6000));
+        operator.x().whileTrue(shooter.shoot(4000));
+        operator.y().whileTrue(shooter.shoot(6000));
 
-    operator.leftBumper().whileTrue(indexer.ohShit().alongWith(intake.out()));
+        operator.leftBumper().whileTrue(indexer.ohShit().alongWith(intake.out()));
 
-    operator
-        .leftTrigger()
-        .whileTrue(indexer.indexFlow().alongWith(intake.intake()).alongWith(shooter.shoot(4500)));
+        operator
+                .leftTrigger()
+                .whileTrue(indexer.indexFlow().alongWith(intake.intake()).alongWith(shooter.shoot(4500)));
 
-    // make the justIndexer and the feed command run together w/ out the feedtoshooter command
+        // make the justIndexer and the feed command run together w/ out the
+        // feedtoshooter command
 
-    operator.rightBumper().whileTrue(indexer.feedRunOnce()).onFalse(indexer.stopFeedRunOnce());
-    operator
-        .rightBumper()
-        .whileTrue(indexer.justIndexerRunOnce())
-        .onFalse(indexer.stopJustIndexerRunOnce());
+        operator.rightBumper().whileTrue(indexer.feedRunOnce()).onFalse(indexer.stopFeedRunOnce());
+        operator
+                .rightBumper()
+                .whileTrue(indexer.justIndexerRunOnce())
+                .onFalse(indexer.stopJustIndexerRunOnce());
 
-    operator.povUp().onTrue(shooter.stepShroud(5));
+        operator.povUp().onTrue(shooter.stepShroud(5));
 
-    operator.povDown().onTrue(shooter.stepShroud(-5));
+        operator.povDown().onTrue(shooter.stepShroud(-5));
 
-    operator.povLeft().onTrue(shooter.shroud(0));
+        operator.povLeft().onTrue(shooter.shroud(0));
 
-    operator.povRight().onTrue(shooter.shroud(13));
+        operator.povRight().onTrue(shooter.shroud(13));
 
-    // Testing buttons: increment/decrement shooter RPM
-    operator
-        .start()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  testShooterRPM = Math.min(testShooterRPM + RPM_INCREMENT, RPM_MAX);
-                  shooter.shoot(testShooterRPM).schedule();
-                }));
+        // Testing buttons: increment/decrement shooter RPM
+        operator
+                .start()
+                .onTrue(
+                        Commands.runOnce(
+                                () -> {
+                                    testShooterRPM = Math.min(testShooterRPM + RPM_INCREMENT, RPM_MAX);
+                                    shooter.shoot(testShooterRPM).schedule();
+                                }));
 
-    operator
-        .back()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  testShooterRPM = Math.max(testShooterRPM - RPM_INCREMENT, RPM_MIN);
-                  shooter.shoot(testShooterRPM).schedule();
-                }));
+        operator
+                .back()
+                .onTrue(
+                        Commands.runOnce(
+                                () -> {
+                                    testShooterRPM = Math.max(testShooterRPM - RPM_INCREMENT, RPM_MIN);
+                                    shooter.shoot(testShooterRPM).schedule();
+                                }));
+    }
 
-    // Testing buttons: increment/decrement shroud angle
-    operator
-        .a()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  testShroudDegrees = Math.min(testShroudDegrees + SHROUD_INCREMENT, SHROUD_MAX);
-                  shooter.shroud(testShroudDegrees).schedule();
-                }));
-
-    operator
-        .y()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  testShroudDegrees = Math.max(testShroudDegrees - SHROUD_INCREMENT, SHROUD_MIN);
-                  shooter.shroud(testShroudDegrees).schedule();
-                }));
-  }
-
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
-  public Command getAutonomousCommand() {
-    return autoChooser.get();
-  }
+    /**
+     * Use this to pass the autonomous command to the main {@link Robot} class.
+     *
+     * @return the command to run in autonomous
+     */
+    public Command getAutonomousCommand() {
+        return autoChooser.get();
+    }
 }
