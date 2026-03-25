@@ -35,9 +35,9 @@ public final class ShooterConstants {
 
   /** Motor PIDs. */
   public final class PID {
-    public static final double kShooterOldP = 6.7d; // 5.5
-    public static final double kShooterOldI = 0.0069d;
-    public static final double kShooterOldD = 0.03d; // 0.151
+    public static final double kShooterOldP = 5.2d; // 5.5
+    public static final double kShooterOldI = 0.007d;
+    public static final double kShooterOldD = 0.2d; // 0.151
 
     public static final double kShooterP = 0d; // 5.5
     public static final double kShooterI = 0.d;

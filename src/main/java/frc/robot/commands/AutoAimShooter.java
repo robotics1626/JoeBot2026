@@ -82,7 +82,7 @@ public class AutoAimShooter extends Command {
     // Clamp shooter RPM to valid range
     double clampedRpm =
         MathUtil.clamp(shooterTargetRpm, 0.0, ShooterConstants.Control.kDashboardMaxTargetRpm);
-    shooter.setShooterRPM(clampedRpm * 1.43);
+    shooter.setShooterRPM(clampedRpm * 1.014);
     tLog.log(
         () -> {
           // Log core fields used for creating interpolation tables
@@ -97,6 +97,7 @@ public class AutoAimShooter extends Command {
           Logger.recordOutput("Shooter/AutoAim/PivotSetpoint", pivotSetpoint);
           Logger.recordOutput("Shooter/AutoAim/PivotEncoderPosition", shooter.getShroud());
           Logger.recordOutput("Shooter/AutoAim/RecommendedShooterTargetRpm", shooterTargetRpm);
+          Logger.recordOutput("Shooter/AutoAim/RecommendedPivotPosition", pivotSetpoint);
 
           // Log actual shooter state
           Logger.recordOutput("Shooter/AutoAim/ActualLeaderRpm", shooter.getLeaderRPM());
