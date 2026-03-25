@@ -56,4 +56,7 @@ public interface ShooterIO {
    * @return General degrees
    */
   public double getShroud();
+
+  /** Zeros all motors */
+  public void zero();
 }

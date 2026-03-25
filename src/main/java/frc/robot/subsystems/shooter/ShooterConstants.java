@@ -23,6 +23,8 @@ public final class ShooterConstants {
     }
   }
 
+  public static final int kLogInterval = 10;
+
   /** Motor IDs. */
   public final class Motors {
     public static final int kShooterLeader = 9;
@@ -69,7 +71,7 @@ public final class ShooterConstants {
 
     public static final double[] kDistanceMeters = {.86, 2.94, 4.72, 5.73};
 
-    public static final double[] kPivotPosition = {11 / 5, 22 / 5, 33 / 5, 42 / 5};
+    public static final double[] kPivotPosition = {11, 22, 33, 42};
 
     public static final double[] kShooterTargetRpm = {2800, 3400, 3750, 3950};
   }

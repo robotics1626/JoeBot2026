@@ -295,6 +295,8 @@ public class RobotContainer {
     /// Operator
     operator.b().whileTrue(indexer.index().alongWith(intake.intake()));
 
+    operator.a().whileTrue(shooter.shootPrecent(1));
+
     // operator.rightTrigger().whileTrue(shooter.shoot(3000));
     operator.rightTrigger().whileTrue(new AutoAimShooter(drive, vision, shooter));
 
@@ -343,23 +345,7 @@ public class RobotContainer {
                 }));
 
     // Testing buttons: increment/decrement shroud angle
-    operator
-        .a()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  testShroudDegrees = Math.min(testShroudDegrees + SHROUD_INCREMENT, SHROUD_MAX);
-                  shooter.shroud(testShroudDegrees).schedule();
-                }));
 
-    operator
-        .y()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  testShroudDegrees = Math.max(testShroudDegrees - SHROUD_INCREMENT, SHROUD_MIN);
-                  shooter.shroud(testShroudDegrees).schedule();
-                }));
   }
 
   /**

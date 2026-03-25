@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.ThrottleLog;
 import java.util.function.DoubleSupplier;
 
 /** Aligns the robot's heading to face the hub while allowing the driver to translate. */
@@ -18,6 +19,8 @@ public class AlignHeadingToHub extends Command {
   private final DoubleSupplier forwardSupplier;
   private final DoubleSupplier strafeSupplier;
   private boolean hinter;
+
+  private ThrottleLog tLog = new ThrottleLog(10);
 
   public AlignHeadingToHub(
       Drive drive, DoubleSupplier forwardSupplier, DoubleSupplier strafeSupplier, boolean hinter) {
@@ -51,7 +54,10 @@ public class AlignHeadingToHub extends Command {
     double distanceToHub = Math.sqrt(dx * dx + dy * dy);
 
     // Log distance to SmartDashboard
-    SmartDashboard.putNumber("AlignHeadingToHub/DistanceToHub", distanceToHub);
+    tLog.log(
+        () -> {
+          SmartDashboard.putNumber("AlignHeadingToHub/DistanceToHub", distanceToHub);
+        });
 
     // Calculate rotation command
     double rotationSpeed =
