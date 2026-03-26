@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -185,13 +184,14 @@ public class RobotContainer {
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     NamedCommands.registerCommand("AutoAimShooter", new AutoAimShooter(drive, vision, shooter));
-    NamedCommands.registerCommand("AlignHeadingToHub", new AlignHeadingToHub(
-                    drive,
-                    () -> -applyLeftDeadband(driver.getLeftY()),
-                    () -> -applyLeftDeadband(driver.getLeftX()),
-                    true));
+    NamedCommands.registerCommand(
+        "AlignHeadingToHub",
+        new AlignHeadingToHub(
+            drive,
+            () -> -applyLeftDeadband(driver.getLeftY()),
+            () -> -applyLeftDeadband(driver.getLeftX()),
+            true));
     NamedCommands.registerCommand("IndexFlow", indexer.indexFlow());
-    
     // Configure the button bindings
     configureButtonBindings();
   }
