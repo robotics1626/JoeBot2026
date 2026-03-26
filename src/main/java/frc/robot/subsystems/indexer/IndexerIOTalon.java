@@ -6,10 +6,13 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.Constants;
 
@@ -45,6 +48,14 @@ public class IndexerIOTalon implements IndexerIO {
             .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
             .withSupplyCurrentLimitEnable(true);
 
+    BaseFeederConfigs.Slot0 =
+        new Slot0Configs()
+            .withKP(IndexerConstants.PID.kFeederP)
+            .withKI(IndexerConstants.PID.kFeederI)
+            .withKD(IndexerConstants.PID.kFeederD)
+            .withKS(IndexerConstants.PID.kFeederS)
+            .withKV(IndexerConstants.PID.kFeederV);
+
     mFeeder.getConfigurator().apply(BaseFeederConfigs);
   }
 
@@ -61,6 +72,14 @@ public class IndexerIOTalon implements IndexerIO {
   @Override
   public void setFeeder(double speed) {
     mFeeder.set(speed);
+  }
+
+  @Override
+  public void setFeederRPM(double rpm) {
+    mFeeder.setControl(
+        new VelocityVoltage(AngularVelocity.ofRelativeUnits(rpm, RPM).in(RotationsPerSecond) * 3)
+            .withSlot(0)
+            .withFeedForward(0));
   }
 
   @Override

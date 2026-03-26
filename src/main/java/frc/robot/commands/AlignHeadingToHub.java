@@ -72,7 +72,7 @@ public class AlignHeadingToHub extends Command {
 
     // Get driver translation inputs
     double maxSpeed = drive.getMaxLinearSpeedMetersPerSec();
-    double hinteredSpeed = 3;
+    double hinteredSpeed = 1.1;
     double xSpeed = forwardSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
     double ySpeed = strafeSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
 

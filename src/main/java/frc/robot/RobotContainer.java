@@ -12,6 +12,8 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -182,6 +184,14 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
+    NamedCommands.registerCommand("AutoAimShooter", new AutoAimShooter(drive, vision, shooter));
+    NamedCommands.registerCommand("AlignHeadingToHub", new AlignHeadingToHub(
+                    drive,
+                    () -> -applyLeftDeadband(driver.getLeftY()),
+                    () -> -applyLeftDeadband(driver.getLeftX()),
+                    true));
+    NamedCommands.registerCommand("IndexFlow", indexer.indexFlow());
+    
     // Configure the button bindings
     configureButtonBindings();
   }
@@ -277,10 +287,11 @@ public class RobotContainer {
         .rightTrigger()
         .whileTrue(
             new AlignHeadingToHub(
-                drive,
-                () -> -applyLeftDeadband(driver.getLeftY()),
-                () -> -applyLeftDeadband(driver.getLeftX()),
-                true))
+                    drive,
+                    () -> -applyLeftDeadband(driver.getLeftY()),
+                    () -> -applyLeftDeadband(driver.getLeftX()),
+                    true)
+                .alongWith(new AutoAimShooter(drive, vision, shooter)))
         .onFalse(
             new HeadingDrive(
                 drive,
@@ -298,16 +309,14 @@ public class RobotContainer {
     operator.a().whileTrue(shooter.shootPrecent(1));
 
     // operator.rightTrigger().whileTrue(shooter.shoot(3000));
-    operator.rightTrigger().whileTrue(new AutoAimShooter(drive, vision, shooter));
+    // operator.rightTrigger().whileTrue(new AutoAimShooter(drive, vision, shooter));
 
     operator.x().whileTrue(shooter.shoot(4000));
     operator.y().whileTrue(shooter.shoot(6000));
 
     operator.leftBumper().whileTrue(indexer.ohShit().alongWith(intake.out()));
 
-    operator
-        .leftTrigger()
-        .whileTrue(indexer.indexFlow().alongWith(intake.intake()).alongWith(shooter.shoot(4500)));
+    operator.leftTrigger().whileTrue(indexer.indexFlow().alongWith(intake.intake()));
 
     // make the justIndexer and the feed command run together w/ out the feedtoshooter command
 

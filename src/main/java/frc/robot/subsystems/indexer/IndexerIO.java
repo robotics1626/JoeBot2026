@@ -23,6 +23,14 @@ public interface IndexerIO {
   public void setFeeder(double speed);
 
   /**
+   * Set the speed of the feeder in RPM
+   *
+   * @apiNote Converted from RPM->RPS.
+   * @param RPM
+   */
+  public void setFeederRPM(double RPM);
+
+  /**
    * Get speed of the feeder.
    *
    * @return

@@ -77,12 +77,12 @@ public class AutoAimShooter extends Command {
     double shooterTargetRpm = shooterRpmMap.get(clampedDistance);
 
     // Directly set shooter values (don't use Commands since this command already owns shooter)
-    shooter.setShroudDegrees(pivotSetpoint);
+    shooter.setShroudDegrees(pivotSetpoint + 7);
 
     // Clamp shooter RPM to valid range
     double clampedRpm =
         MathUtil.clamp(shooterTargetRpm, 0.0, ShooterConstants.Control.kDashboardMaxTargetRpm);
-    shooter.setShooterRPM(clampedRpm * 1.014);
+    shooter.setShooterRPM(clampedRpm * 1.030);
     tLog.log(
         () -> {
           // Log core fields used for creating interpolation tables
