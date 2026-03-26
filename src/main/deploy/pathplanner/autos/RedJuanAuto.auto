@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "MiddleSimplePath"
+            "pathName": "RedJuanPath"
           }
         }
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": null,
   "choreoAuto": false
 }
