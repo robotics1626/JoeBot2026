@@ -5,12 +5,6 @@
     "data": {
       "commands": [
         {
-          "type": "path",
-          "data": {
-            "pathName": "MiddleSimplePath"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "AlignHeadingToHub"
