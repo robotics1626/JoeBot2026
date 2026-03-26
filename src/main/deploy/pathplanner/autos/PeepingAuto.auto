@@ -5,9 +5,15 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "PeepingAnglePath"
+            "name": "AlignHeadingToHub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShooter"
           }
         }
       ]
