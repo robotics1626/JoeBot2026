@@ -23,6 +23,8 @@ public final class ShooterConstants {
     }
   }
 
+  public static final int kLogInterval = 10;
+
   /** Motor IDs. */
   public final class Motors {
     public static final int kShooterLeader = 9;
@@ -33,9 +35,9 @@ public final class ShooterConstants {
 
   /** Motor PIDs. */
   public final class PID {
-    public static final double kShooterOldP = 6.7d; // 5.5
-    public static final double kShooterOldI = 0.0069d;
-    public static final double kShooterOldD = 0.03d; // 0.151
+    public static final double kShooterOldP = 5.2d; // 5.5
+    public static final double kShooterOldI = 0.007d;
+    public static final double kShooterOldD = 0.2d; // 0.151
 
     public static final double kShooterP = 0d; // 5.5
     public static final double kShooterI = 0.d;
@@ -67,10 +69,14 @@ public final class ShooterConstants {
                                                                  // adjusted based on real-world
     // testing
 
-    public static final double[] kDistanceMeters = { .86, 2.94, 4.72, 5.73 };
+    public static final double[] kDistanceMeters = {
+      .86, 1.76, 2.60, 2.84, 2.94, 3.70, 4.72, 5.01, 5.73
+    };
 
-    public static final double[] kPivotPosition = { 11 / 5, 22 / 5, 33 / 5, 42 / 5 };
+    public static final double[] kPivotPosition = {11, 18, 28, 19, 22, 31, 33, 34.3, 37.5};
 
-    public static final double[] kShooterTargetRpm = { 2800, 3400, 3750, 3950 };
+    public static final double[] kShooterTargetRpm = {
+      2800, 3200, 3150, 3263, 3400, 3566, 3750, 3800, 3950
+    };
   }
 }

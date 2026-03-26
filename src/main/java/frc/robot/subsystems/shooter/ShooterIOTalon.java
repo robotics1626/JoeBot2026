@@ -37,12 +37,13 @@ public class ShooterIOTalon implements ShooterIO {
     // Shooter configurations
 
     var BaseShooterConfigs = new TalonFXConfiguration();
-    BaseShooterConfigs.Slot0 = new Slot0Configs()
-        // .withKP(ShooterConstants.PID.kShooterP)
-        // .withKI(ShooterConstants.PID.kShooterI)
-        // .withKD(ShooterConstants.PID.kShooterD)
-        .withKS(ShooterConstants.PID.kShooterS)
-        .withKV(ShooterConstants.PID.kShooterV);
+    BaseShooterConfigs.Slot0 =
+        new Slot0Configs()
+            .withKP(ShooterConstants.PID.kShooterOldP)
+            .withKI(ShooterConstants.PID.kShooterOldI)
+            .withKD(ShooterConstants.PID.kShooterOldD)
+            .withKS(ShooterConstants.PID.kShooterS)
+            .withKV(ShooterConstants.PID.kShooterV);
 
     BaseShooterConfigs.CurrentLimits = new CurrentLimitsConfigs()
         .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
@@ -149,6 +150,14 @@ public class ShooterIOTalon implements ShooterIO {
 
   @Override
   public double getShroud() {
-    return Rotations.of(mShroudController.getPosition().getValueAsDouble()).in(Degrees) / 157.5; // this might be utterly wrong
+    return Rotations.of(mShroudController.getPosition().getValueAsDouble()).in(Degrees) / 157.5;
+  }
+
+  @Override
+  public void zero() {
+    mShooterLeader.set(0);
+    mShooterFollower.setControl(
+        new Follower(mShooterLeader.getDeviceID(), MotorAlignmentValue.Opposed));
+    mShroudController.setControl(new PositionVoltage(0).withSlot(0));
   }
 }

@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.ThrottleLog;
 import java.util.function.DoubleSupplier;
 
 /**
@@ -21,6 +22,8 @@ public class AlignHeadingToHub extends Command {
   private final DoubleSupplier forwardSupplier;
   private final DoubleSupplier strafeSupplier;
   private boolean hinter;
+
+  private ThrottleLog tLog = new ThrottleLog(10);
 
   public AlignHeadingToHub(
       Drive drive, DoubleSupplier forwardSupplier, DoubleSupplier strafeSupplier, boolean hinter) {
@@ -54,7 +57,10 @@ public class AlignHeadingToHub extends Command {
     double distanceToHub = Math.sqrt(dx * dx + dy * dy);
 
     // Log distance to SmartDashboard
-    SmartDashboard.putNumber("AlignHeadingToHub/DistanceToHub", distanceToHub);
+    tLog.log(
+        () -> {
+          SmartDashboard.putNumber("AlignHeadingToHub/DistanceToHub", distanceToHub);
+        });
 
     // Calculate rotation command
     double rotationSpeed = headingController.calculate(robotPose.getRotation().getRadians(), targetYaw);
@@ -67,7 +73,7 @@ public class AlignHeadingToHub extends Command {
 
     // Get driver translation inputs
     double maxSpeed = drive.getMaxLinearSpeedMetersPerSec();
-    double hinteredSpeed = 3;
+    double hinteredSpeed = 1.1;
     double xSpeed = forwardSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
     double ySpeed = strafeSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
 

@@ -2,9 +2,11 @@ package frc.robot.subsystems.indexer;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
 
 public class Indexer extends SubsystemBase {
   private final IndexerIO mIndexer;
+  private double feederTargetRPM = 0.0;
 
   public Indexer(IndexerIO indexer) {
     this.mIndexer = indexer;
@@ -14,10 +16,12 @@ public class Indexer extends SubsystemBase {
     return startEnd(
         () -> {
           mIndexer.setSpeed(.40);
-          mIndexer.setFeeder(-.20);
+          feederTargetRPM = -2000;
+          mIndexer.setFeederRPM(feederTargetRPM);
         },
         () -> {
           mIndexer.setSpeed(0);
+          feederTargetRPM = 0;
           mIndexer.setFeeder(0);
         });
   }
@@ -26,10 +30,12 @@ public class Indexer extends SubsystemBase {
     return startEnd(
         () -> {
           mIndexer.setSpeed(.40);
-          mIndexer.setFeeder(.20);
+          feederTargetRPM = 2000;
+          mIndexer.setFeederRPM(feederTargetRPM);
         },
         () -> {
           mIndexer.setSpeed(0);
+          feederTargetRPM = 0;
           mIndexer.setFeeder(0);
         });
   }
@@ -47,18 +53,41 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command feed() {
-    return startEnd(() -> mIndexer.setFeeder(.20), () -> mIndexer.setFeeder(0));
+    return startEnd(
+        () -> {
+          feederTargetRPM = 2000;
+          mIndexer.setFeederRPM(feederTargetRPM);
+        },
+        () -> {
+          feederTargetRPM = 0;
+          mIndexer.setFeeder(0);
+        });
   }
 
   public Command feedRunOnce() {
-    return runOnce(() -> mIndexer.setFeeder(.20));
+    return runOnce(
+        () -> {
+          feederTargetRPM = 2000;
+          mIndexer.setFeederRPM(feederTargetRPM);
+        });
   }
 
   public Command stopFeedRunOnce() {
-    return runOnce(() -> mIndexer.setFeeder(0));
+    return runOnce(
+        () -> {
+          feederTargetRPM = 0;
+          mIndexer.setFeeder(0);
+        });
   }
 
   public Command ohShit() {
     return startEnd(() -> mIndexer.setSpeed(-.40), () -> mIndexer.setSpeed(0));
+  }
+
+  @Override
+  public void periodic() {
+    // Log feeder target and actual RPM (throttled to 50Hz for lower bandwidth)
+    Logger.recordOutput("Indexer/Feeder/TargetRPM", feederTargetRPM);
+    Logger.recordOutput("Indexer/Feeder/ActualRPM", mIndexer.getFeeder());
   }
 }

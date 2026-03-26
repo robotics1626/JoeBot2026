@@ -3,12 +3,15 @@ package frc.robot.subsystems.shooter;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.ThrottleLog;
 
 public class Shooter extends SubsystemBase {
   private final ShooterIO mShooter;
+  private final ThrottleLog tLog;
 
   public Shooter(ShooterIO shooter) {
     this.mShooter = shooter;
+    this.tLog = new ThrottleLog(ShooterConstants.kLogInterval);
   }
 
   public Command shoot(double RPM) {
@@ -40,6 +43,10 @@ public class Shooter extends SubsystemBase {
     return mShooter.getShroud();
   }
 
+  public void zero() {
+    mShooter.zero();
+  }
+
   // Expose shooter RPMs for logging and data collection
   public double getLeaderRPM() {
     return mShooter.getLeaderRPM();
@@ -51,16 +58,17 @@ public class Shooter extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Shooter Leader RPM", Math.round(mShooter.getLeaderRPM()));
-    SmartDashboard.putNumber("Shooter Follower RPM", Math.round(mShooter.getFollowerRPM()));
-    SmartDashboard.putNumber("Shooter Shroud Degrees", Math.round(mShooter.getShroud()));
-
-    // Also record to structured logger for dataset collection
-    org.littletonrobotics.junction.Logger.recordOutput(
-        "Shooter/Actual/LeaderRPM", mShooter.getLeaderRPM());
-    org.littletonrobotics.junction.Logger.recordOutput(
-        "Shooter/Actual/FollowerRPM", mShooter.getFollowerRPM());
-    org.littletonrobotics.junction.Logger.recordOutput(
-        "Shooter/Actual/ShroudDegrees", mShooter.getShroud());
+    tLog.log(
+        () -> {
+          SmartDashboard.putNumber("Shooter Leader RPM", Math.round(mShooter.getLeaderRPM()));
+          SmartDashboard.putNumber("Shooter Follower RPM", Math.round(mShooter.getFollowerRPM()));
+          SmartDashboard.putNumber("Shooter Shroud Degrees", Math.round(mShooter.getShroud()));
+          org.littletonrobotics.junction.Logger.recordOutput(
+              "Shooter/Actual/LeaderRPM", mShooter.getLeaderRPM());
+          org.littletonrobotics.junction.Logger.recordOutput(
+              "Shooter/Actual/FollowerRPM", mShooter.getFollowerRPM());
+          org.littletonrobotics.junction.Logger.recordOutput(
+              "Shooter/Actual/ShroudDegrees", mShooter.getShroud());
+        });
   }
 }

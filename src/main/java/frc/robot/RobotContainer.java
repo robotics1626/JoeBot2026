@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -187,9 +188,18 @@ public class RobotContainer {
         autoChooser.addOption(
                 "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
-        // Configure the button bindings
-        configureButtonBindings();
-    }
+    NamedCommands.registerCommand("AutoAimShooter", new AutoAimShooter(drive, vision, shooter));
+    NamedCommands.registerCommand(
+        "AlignHeadingToHub",
+        new AlignHeadingToHub(
+            drive,
+            () -> -applyLeftDeadband(driver.getLeftY()),
+            () -> -applyLeftDeadband(driver.getLeftX()),
+            true));
+    NamedCommands.registerCommand("IndexFlow", indexer.indexFlow());
+    // Configure the button bindings
+    configureButtonBindings();
+  }
 
     /**
      * Apply deadband to left joystick input (0.2 deadband). Values within the
@@ -277,42 +287,42 @@ public class RobotContainer {
                                 MaxAngularRate,
                                 90));
 
-        // driver.rightTrigger().whileTrue(aimbot);
-        // Right trigger: align to hub using AlignToPose
-        driver
-                .rightTrigger()
-                .whileTrue(
-                        new AlignHeadingToHub(
-                                drive,
-                                () -> -applyLeftDeadband(driver.getLeftY()),
-                                () -> -applyLeftDeadband(driver.getLeftX()),
-                                true))
-                .onFalse(
-                        new HeadingDrive(
-                                drive,
-                                () -> applyLeftDeadband(driver.getLeftX()),
-                                () -> applyLeftDeadband(driver.getLeftY()),
-                                () -> -applyRightDeadband(driver.getRightX()),
-                                () -> -applyRightDeadband(driver.getRightY()),
-                                MaxSpeed,
-                                MaxAngularRate,
-                                90));
+    // driver.rightTrigger().whileTrue(aimbot);
+    // Right trigger: align to hub using AlignToPose
+    driver
+        .rightTrigger()
+        .whileTrue(
+            new AlignHeadingToHub(
+                    drive,
+                    () -> -applyLeftDeadband(driver.getLeftY()),
+                    () -> -applyLeftDeadband(driver.getLeftX()),
+                    true)
+                .alongWith(new AutoAimShooter(drive, vision, shooter)))
+        .onFalse(
+            new HeadingDrive(
+                drive,
+                () -> applyLeftDeadband(driver.getLeftX()),
+                () -> applyLeftDeadband(driver.getLeftY()),
+                () -> -applyRightDeadband(driver.getRightX()),
+                () -> -applyRightDeadband(driver.getRightY()),
+                MaxSpeed,
+                MaxAngularRate,
+                90));
 
-        /// Operator
-        operator.b().whileTrue(indexer.index().alongWith(intake.intake()));
+    /// Operator
+    operator.b().whileTrue(indexer.index().alongWith(intake.intake()));
 
-        // operator.rightTrigger().whileTrue(shooter.shoot(3000));
-        operator.rightTrigger().whileTrue(
-                new AutoAimShooter(drive, vision, shooter).alongWith(new RumbleControllers(operator, driver)));
+    operator.a().whileTrue(shooter.shootPrecent(1));
+
+    // operator.rightTrigger().whileTrue(shooter.shoot(3000));
+    // operator.rightTrigger().whileTrue(new AutoAimShooter(drive, vision, shooter));
 
         operator.x().whileTrue(shooter.shoot(4000));
         operator.y().whileTrue(shooter.shoot(6000));
 
         operator.leftBumper().whileTrue(indexer.ohShit().alongWith(intake.out()));
 
-        operator
-                .leftTrigger()
-                .whileTrue(indexer.indexFlow().alongWith(intake.intake()).alongWith(shooter.shoot(4500)));
+    operator.leftTrigger().whileTrue(indexer.indexFlow().alongWith(intake.intake()));
 
         // make the justIndexer and the feed command run together w/ out the
         // feedtoshooter command
@@ -341,15 +351,18 @@ public class RobotContainer {
                                     shooter.shoot(testShooterRPM).schedule();
                                 }));
 
-        operator
-                .back()
-                .onTrue(
-                        Commands.runOnce(
-                                () -> {
-                                    testShooterRPM = Math.max(testShooterRPM - RPM_INCREMENT, RPM_MIN);
-                                    shooter.shoot(testShooterRPM).schedule();
-                                }));
-    }
+    operator
+        .back()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShooterRPM = Math.max(testShooterRPM - RPM_INCREMENT, RPM_MIN);
+                  shooter.shoot(testShooterRPM).schedule();
+                }));
+
+    // Testing buttons: increment/decrement shroud angle
+
+  }
 
     /**
      * Use this to pass the autonomous command to the main {@link Robot} class.

@@ -12,6 +12,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.ThrottleLog;
 import java.util.OptionalDouble;
 import org.littletonrobotics.junction.Logger;
 
@@ -29,6 +30,8 @@ public class AutoAimShooter extends Command {
 
   private final double minDistanceMeters;
   private final double maxDistanceMeters;
+
+  private final ThrottleLog tLog = new ThrottleLog(10);
 
   public AutoAimShooter(Drive drive, Vision vision, Shooter shooter) {
     this.drive = drive;
@@ -69,55 +72,65 @@ public class AutoAimShooter extends Command {
 
     double shooterTargetRpm = shooterRpmMap.get(clampedDistance);
 
-    // Directly set shooter values (don't use Commands since this command already
-    // owns shooter)
-    shooter.setShroudDegrees(pivotSetpoint);
+    // Directly set shooter values (don't use Commands since this command already owns shooter)
+    shooter.setShroudDegrees(pivotSetpoint + 7);
 
     // Clamp shooter RPM to valid range
-    double clampedRpm = MathUtil.clamp(shooterTargetRpm, 0.0, ShooterConstants.Control.kDashboardMaxTargetRpm);
-    shooter.setShooterRPM(clampedRpm);
-    // Log core fields used for creating interpolation tables
-    Logger.recordOutput("Shooter/AutoAim/Timestamp", Timer.getFPGATimestamp());
-    Logger.recordOutput("Shooter/AutoAim/UsingVisionDistance", usingVisionDistance);
-    Logger.recordOutput("Shooter/AutoAim/RawVisionDistanceMeters", rawVisionDistanceMeters);
-    Logger.recordOutput(
-        "Shooter/AutoAim/AdjustedVisionDistanceMeters", adjustedVisionDistanceMeters);
-    Logger.recordOutput("Shooter/AutoAim/OdometryDistanceMeters", odometryDistanceMeters);
-    Logger.recordOutput("Shooter/AutoAim/DistanceMeters", distanceMeters);
-    Logger.recordOutput("Shooter/AutoAim/DistanceClampedMeters", clampedDistance);
-    Logger.recordOutput("Shooter/AutoAim/PivotSetpoint", pivotSetpoint);
-    Logger.recordOutput("Shooter/AutoAim/PivotEncoderPosition", shooter.getShroud());
-    Logger.recordOutput("Shooter/AutoAim/RecommendedShooterTargetRpm", shooterTargetRpm);
+    double clampedRpm =
+        MathUtil.clamp(shooterTargetRpm, 0.0, ShooterConstants.Control.kDashboardMaxTargetRpm);
+    shooter.setShooterRPM(clampedRpm * 1.030);
+    tLog.log(
+        () -> {
+          // Log core fields used for creating interpolation tables
+          Logger.recordOutput("Shooter/AutoAim/Timestamp", Timer.getFPGATimestamp());
+          Logger.recordOutput("Shooter/AutoAim/UsingVisionDistance", usingVisionDistance);
+          Logger.recordOutput("Shooter/AutoAim/RawVisionDistanceMeters", rawVisionDistanceMeters);
+          Logger.recordOutput(
+              "Shooter/AutoAim/AdjustedVisionDistanceMeters", adjustedVisionDistanceMeters);
+          Logger.recordOutput("Shooter/AutoAim/OdometryDistanceMeters", odometryDistanceMeters);
+          Logger.recordOutput("Shooter/AutoAim/DistanceMeters", distanceMeters);
+          Logger.recordOutput("Shooter/AutoAim/DistanceClampedMeters", clampedDistance);
+          Logger.recordOutput("Shooter/AutoAim/PivotSetpoint", pivotSetpoint);
+          Logger.recordOutput("Shooter/AutoAim/PivotEncoderPosition", shooter.getShroud());
+          Logger.recordOutput("Shooter/AutoAim/RecommendedShooterTargetRpm", shooterTargetRpm);
+          Logger.recordOutput("Shooter/AutoAim/RecommendedPivotPosition", pivotSetpoint);
 
-    // Log actual shooter state
-    Logger.recordOutput("Shooter/AutoAim/ActualLeaderRpm", shooter.getLeaderRPM());
-    Logger.recordOutput("Shooter/AutoAim/ActualFollowerRpm", shooter.getFollowerRPM());
+          // Log actual shooter state
+          Logger.recordOutput("Shooter/AutoAim/ActualLeaderRpm", shooter.getLeaderRPM());
+          Logger.recordOutput("Shooter/AutoAim/ActualFollowerRpm", shooter.getFollowerRPM());
 
-    // Log robot pose (useful to correlate distance with field position)
-    Logger.recordOutput("Shooter/AutoAim/RobotPoseX", robotPose.getX());
-    Logger.recordOutput("Shooter/AutoAim/RobotPoseY", robotPose.getY());
-    Logger.recordOutput(
-        "Shooter/AutoAim/RobotPoseHeadingDegrees", robotPose.getRotation().getDegrees());
+          // Log robot pose (useful to correlate distance with field position)
+          Logger.recordOutput("Shooter/AutoAim/RobotPoseX", robotPose.getX());
+          Logger.recordOutput("Shooter/AutoAim/RobotPoseY", robotPose.getY());
+          Logger.recordOutput(
+              "Shooter/AutoAim/RobotPoseHeadingDegrees", robotPose.getRotation().getDegrees());
+        });
 
     // Log latest vision target details if present
     var latestObs = vision.getLatestTargetObservation();
     if (latestObs.isPresent()) {
       var obs = latestObs.get();
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetId", obs.tagId());
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetTxDeg", obs.tx().getDegrees());
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetTyDeg", obs.ty().getDegrees());
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetDistanceMeters", obs.distanceMeters());
+      tLog.log(
+          () -> {
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetId", obs.tagId());
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetTxDeg", obs.tx().getDegrees());
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetTyDeg", obs.ty().getDegrees());
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetDistanceMeters", obs.distanceMeters());
+          });
     } else {
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetId", -1);
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetTxDeg", Double.NaN);
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetTyDeg", Double.NaN);
-      Logger.recordOutput("Shooter/AutoAim/LatestTargetDistanceMeters", Double.NaN);
+      tLog.log(
+          () -> {
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetId", -1);
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetTxDeg", Double.NaN);
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetTyDeg", Double.NaN);
+            Logger.recordOutput("Shooter/AutoAim/LatestTargetDistanceMeters", Double.NaN);
+          });
     }
   }
 
   @Override
   public void end(boolean interrupted) {
-    shooter.shoot(0);
+    shooter.zero();
   }
 
   @Override
