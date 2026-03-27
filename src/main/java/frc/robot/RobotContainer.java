@@ -204,26 +204,28 @@ public class RobotContainer {
     autoChooser.addOption(
     "BBAll",
     new SequentialCommandGroup(
-
         autoAlignHeadingToHub.until(autoAlignHeadingToHub.isLookingAtHub()),
 
-        new WaitUntilCommand(auto_autoAimShooter::isAtTargetRpm)
-            .deadlineFor(auto_autoAimShooter),
+        new WaitUntilCommand(() -> auto_autoAimShooter.isAtTargetRpm())
+            .deadlineFor(makeAutoAimShooter()),
 
-        auto_autoAimShooter.withTimeout(2.0),
+        makeAutoAimShooter().withTimeout(2.0),
 
         new ParallelDeadlineGroup(
             new WaitCommand(5.0),
-            auto_autoAimShooter,
+            makeAutoAimShooter(),
             indexer.indexFlow()
         )
-
     )
 );
 
     // Configure the button bindings
     configureButtonBindings();
   }
+
+  private Command makeAutoAimShooter() {
+    return new AutoAimShooter(drive, vision, shooter);
+}
 
   /**
    * Apply deadband to left joystick input (0.2 deadband). Values within the deadband are set to 0,
