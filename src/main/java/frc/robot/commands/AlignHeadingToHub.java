@@ -10,6 +10,7 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.ThrottleLog;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 /** Aligns the robot's heading to face the hub while allowing the driver to translate. */
@@ -19,6 +20,7 @@ public class AlignHeadingToHub extends Command {
   private final DoubleSupplier forwardSupplier;
   private final DoubleSupplier strafeSupplier;
   private boolean hinter;
+  private boolean lookingAtHub = false;
 
   private ThrottleLog tLog = new ThrottleLog(10);
 
@@ -82,6 +84,9 @@ public class AlignHeadingToHub extends Command {
 
     // Command the drive
     drive.runVelocity(speeds);
+    // Update lookingAtHub based on threshold of robots diff from heading to hub
+    double angleError = Math.abs(headingController.getPositionError());
+    lookingAtHub = angleError < 0.1; // ~5.7 degrees threshold
   }
 
   @Override
@@ -92,5 +97,9 @@ public class AlignHeadingToHub extends Command {
   @Override
   public boolean isFinished() {
     return false;
+  }
+
+  public BooleanSupplier isLookingAtHub() {
+    return () -> lookingAtHub;
   }
 }

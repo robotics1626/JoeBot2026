@@ -1,7 +1,11 @@
 package frc.robot.subsystems.indexer;
 
+import static edu.wpi.first.units.Units.Milliseconds;
+
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class Indexer extends SubsystemBase {
@@ -82,6 +86,13 @@ public class Indexer extends SubsystemBase {
 
   public Command ohShit() {
     return startEnd(() -> mIndexer.setSpeed(-.40), () -> mIndexer.setSpeed(0));
+  }
+
+  public BooleanSupplier untilTimer(Time time) {
+    // does a loop in however much time passed into the arguments. If the time is up, return true,
+    // else false.
+    long startTime = System.currentTimeMillis();
+    return () -> (System.currentTimeMillis() - startTime) >= time.in(Milliseconds);
   }
 
   @Override
