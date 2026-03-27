@@ -15,6 +15,12 @@
           "data": {
             "name": "AlignHeadingToHub"
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShooter"
+          }
         }
       ]
     }

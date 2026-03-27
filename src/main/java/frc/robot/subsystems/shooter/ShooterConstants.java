@@ -62,11 +62,13 @@ public final class ShooterConstants {
   }
 
   public final class AutoAim {
-    public static final double kVisionDistanceScale = 1.0d; // Tuning parameter for vision distance; may need to be
-                                                            // adjusted based on real-world
+    public static final double kVisionDistanceScale =
+        1.0d; // Tuning parameter for vision distance; may need to be
+    // adjusted based on real-world
     // testing
-    public static final double kVisionDistanceBiasMeters = 0.0d; // Tuning parameter for vision distance; may need to be
-                                                                 // adjusted based on real-world
+    public static final double kVisionDistanceBiasMeters =
+        0.0d; // Tuning parameter for vision distance; may need to be
+    // adjusted based on real-world
     // testing
 
     public static final double[] kDistanceMeters = {

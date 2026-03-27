@@ -45,12 +45,12 @@ public class HeadingDrive extends Command {
   /**
    * Creates a new field-relative drive command with heading control
    *
-   * @param drivetrain     The swerve drivetrain subsystem
-   * @param leftX          Left joystick X (strafe)
-   * @param leftY          Left joystick Y (forward/back)
-   * @param rightX         Right joystick X (aiming)
-   * @param rightY         Right joystick Y (aiming)
-   * @param maxSpeed       Maximum translation speed (m/s)
+   * @param drivetrain The swerve drivetrain subsystem
+   * @param leftX Left joystick X (strafe)
+   * @param leftY Left joystick Y (forward/back)
+   * @param rightX Right joystick X (aiming)
+   * @param rightY Right joystick Y (aiming)
+   * @param maxSpeed Maximum translation speed (m/s)
    * @param maxAngularRate Maximum rotation rate (rad/s)
    */
   public HeadingDrive(
@@ -108,7 +108,8 @@ public class HeadingDrive extends Command {
       // make "right" map to robot-right by passing -90 degrees).
       var joystickHeading = new Rotation2d(rightJoyX, rightJoyY);
       if (aimJoystickAngleOffsetDegrees != 0.0) {
-        joystickHeading = joystickHeading.rotateBy(new Rotation2d(Math.toRadians(aimJoystickAngleOffsetDegrees)));
+        joystickHeading =
+            joystickHeading.rotateBy(new Rotation2d(Math.toRadians(aimJoystickAngleOffsetDegrees)));
       }
       targetHeading = joystickHeading;
     }
@@ -121,17 +122,16 @@ public class HeadingDrive extends Command {
     // and reset the PID to avoid aggressive corrective motion.
     double rawDiff = currentHeading.getRadians() - lastHeading.getRadians();
     // normalize to [-PI, PI]
-    while (rawDiff > Math.PI)
-      rawDiff -= 2.0 * Math.PI;
-    while (rawDiff < -Math.PI)
-      rawDiff += 2.0 * Math.PI;
+    while (rawDiff > Math.PI) rawDiff -= 2.0 * Math.PI;
+    while (rawDiff < -Math.PI) rawDiff += 2.0 * Math.PI;
     double absDiff = Math.abs(rawDiff);
     if (absDiff > HEADING_RESET_THRESHOLD && rightJoyMagnitude <= 0.2) {
       targetHeading = currentHeading;
       headingController.reset();
     }
 
-    rotationSpeed = headingController.calculate(currentHeading.getRadians(), targetHeading.getRadians());
+    rotationSpeed =
+        headingController.calculate(currentHeading.getRadians(), targetHeading.getRadians());
 
     // remember last heading for next loop
     lastHeading = currentHeading;
@@ -140,8 +140,9 @@ public class HeadingDrive extends Command {
     rotationSpeed = MathUtil.clamp(rotationSpeed, -maxAngularRate, maxAngularRate);
 
     // Build chassis speeds from field-relative inputs and send to drivetrain
-    ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-        xSpeed, ySpeed, rotationSpeed, drivetrain.getRotation());
+    ChassisSpeeds speeds =
+        ChassisSpeeds.fromFieldRelativeSpeeds(
+            xSpeed, ySpeed, rotationSpeed, drivetrain.getRotation());
     drivetrain.runVelocity(speeds);
   }
 
