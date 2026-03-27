@@ -202,13 +202,18 @@ public class RobotContainer {
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     autoChooser.addOption(
-        "BBAll",
-        new SequentialCommandGroup(
-            autoAlignHeadingToHub.until(autoAlignHeadingToHub.isLookingAtHub()),
-            new ParallelCommandGroup(indexer.indexFlow(), auto_autoAimShooter)
-                .until(() -> Timer.getTimestamp() > 4),
-            new WaitCommand(Time.ofBaseUnits(3, Seconds)),
-            Commands.runOnce(() -> {})));
+    "BBAll",
+    new SequentialCommandGroup(
+        autoAlignHeadingToHub.until(autoAlignHeadingToHub.isLookingAtHub()),
+
+        new ParallelCommandGroup(
+            indexer.indexFlow(),
+            auto_autoAimShooter
+        ).withTimeout(4.0),
+
+        new WaitCommand(3.0)
+    )
+);
 
     // Configure the button bindings
     configureButtonBindings();
