@@ -25,28 +25,24 @@ public class IndexerIOTalon implements IndexerIO {
     mFeeder = new TalonFX(IndexerConstants.Motors.kFeeder, Constants.K_CAN_BUS);
 
     var BaseIndexerConfigs = new TalonFXConfiguration();
-    BaseIndexerConfigs.MotorOutput =
-        new MotorOutputConfigs()
-            .withInverted(InvertedValue.CounterClockwise_Positive)
-            .withNeutralMode(NeutralModeValue.Coast);
+    BaseIndexerConfigs.MotorOutput = new MotorOutputConfigs()
+        .withInverted(InvertedValue.CounterClockwise_Positive)
+        .withNeutralMode(NeutralModeValue.Coast);
 
-    BaseIndexerConfigs.CurrentLimits =
-        new CurrentLimitsConfigs()
-            .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
-            .withSupplyCurrentLimitEnable(true);
+    BaseIndexerConfigs.CurrentLimits = new CurrentLimitsConfigs()
+        .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
+        .withSupplyCurrentLimitEnable(true);
 
     mIndexer.getConfigurator().apply(BaseIndexerConfigs);
 
     var BaseFeederConfigs = new TalonFXConfiguration();
-    BaseFeederConfigs.MotorOutput =
-        new MotorOutputConfigs()
-            .withInverted(InvertedValue.Clockwise_Positive)
-            .withNeutralMode(NeutralModeValue.Brake);
+    BaseFeederConfigs.MotorOutput = new MotorOutputConfigs()
+        .withInverted(InvertedValue.Clockwise_Positive)
+        .withNeutralMode(NeutralModeValue.Brake);
 
-    BaseFeederConfigs.CurrentLimits =
-        new CurrentLimitsConfigs()
-            .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
-            .withSupplyCurrentLimitEnable(true);
+    BaseFeederConfigs.CurrentLimits = new CurrentLimitsConfigs()
+        .withSupplyCurrentLimit(Current.ofRelativeUnits(35, Amps))
+        .withSupplyCurrentLimitEnable(true);
 
     BaseFeederConfigs.Slot0 =
         new Slot0Configs()

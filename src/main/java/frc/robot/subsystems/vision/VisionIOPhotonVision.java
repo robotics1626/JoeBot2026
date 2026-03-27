@@ -26,7 +26,7 @@ public class VisionIOPhotonVision implements VisionIO {
   /**
    * Creates a new VisionIOPhotonVision.
    *
-   * @param name The configured name of the camera.
+   * @param name          The configured name of the camera.
    * @param robotToCamera The 3D position of the camera relative to the robot.
    */
   public VisionIOPhotonVision(String name, Transform3d robotToCamera) {
@@ -42,13 +42,15 @@ public class VisionIOPhotonVision implements VisionIO {
     Set<Short> tagIds = new HashSet<>();
     List<PoseObservation> poseObservations = new LinkedList<>();
     for (var result : camera.getAllUnreadResults()) {
-      // Update latest target observation to match new VisionIO.TargetObservation record
+      // Update latest target observation to match new VisionIO.TargetObservation
+      // record
       if (result.hasTargets()) {
         var best = result.getBestTarget();
         int tagId = -1;
         double distance = Double.NaN;
         try {
-          // PhotonTrackedTarget exposes fiducialId and bestCameraToTarget in several versions
+          // PhotonTrackedTarget exposes fiducialId and bestCameraToTarget in several
+          // versions
           // Try to read the id and distance in a safe way.
           tagId = best.fiducialId;
         } catch (Exception e) {
@@ -68,16 +70,15 @@ public class VisionIOPhotonVision implements VisionIO {
           }
         }
 
-        inputs.latestTargetObservation =
-            new TargetObservation(
-                true,
-                tagId,
-                distance,
-                Rotation2d.fromDegrees(result.getBestTarget().getYaw()),
-                Rotation2d.fromDegrees(result.getBestTarget().getPitch()));
+        inputs.latestTargetObservation = new TargetObservation(
+            true,
+            tagId,
+            distance,
+            Rotation2d.fromDegrees(result.getBestTarget().getYaw()),
+            Rotation2d.fromDegrees(result.getBestTarget().getPitch()));
       } else {
-        inputs.latestTargetObservation =
-            new TargetObservation(false, -1, Double.NaN, Rotation2d.kZero, Rotation2d.kZero);
+        inputs.latestTargetObservation = new TargetObservation(false, -1, Double.NaN, Rotation2d.kZero,
+            Rotation2d.kZero);
       }
 
       // Add pose observation
@@ -114,8 +115,7 @@ public class VisionIOPhotonVision implements VisionIO {
         // Calculate robot pose
         var tagPose = aprilTagLayout.getTagPose(target.fiducialId);
         if (tagPose.isPresent()) {
-          Transform3d fieldToTarget =
-              new Transform3d(tagPose.get().getTranslation(), tagPose.get().getRotation());
+          Transform3d fieldToTarget = new Transform3d(tagPose.get().getTranslation(), tagPose.get().getRotation());
           Transform3d cameraToTarget = target.bestCameraToTarget;
           Transform3d fieldToCamera = fieldToTarget.plus(cameraToTarget.inverse());
           Transform3d fieldToRobot = fieldToCamera.plus(robotToCamera.inverse());

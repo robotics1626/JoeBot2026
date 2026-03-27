@@ -17,7 +17,8 @@ import java.util.OptionalDouble;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Continuously aims the shooter pivot and wheel speed from distance-to-hub interpolation tables.
+ * Continuously aims the shooter pivot and wheel speed from distance-to-hub
+ * interpolation tables.
  */
 public class AutoAimShooter extends Command {
   private final Drive drive;
@@ -44,9 +45,7 @@ public class AutoAimShooter extends Command {
     }
 
     minDistanceMeters = ShooterConstants.AutoAim.kDistanceMeters[0];
-    maxDistanceMeters =
-        ShooterConstants.AutoAim.kDistanceMeters[
-            ShooterConstants.AutoAim.kDistanceMeters.length - 1];
+    maxDistanceMeters = ShooterConstants.AutoAim.kDistanceMeters[ShooterConstants.AutoAim.kDistanceMeters.length - 1];
 
     addRequirements(shooter);
   }
@@ -56,20 +55,17 @@ public class AutoAimShooter extends Command {
     OptionalDouble visionDistanceMeters = vision.getLatestHubDistanceMeters();
 
     Pose2d robotPose = drive.getPose();
-    Translation2d hubCenter =
-        AllianceFlipUtil.apply(FieldConstants.Hub.blueCenter).getTranslation();
+    Translation2d hubCenter = AllianceFlipUtil.apply(FieldConstants.Hub.blueCenter).getTranslation();
     double odometryDistanceMeters = robotPose.getTranslation().getDistance(hubCenter);
 
     boolean usingVisionDistance = visionDistanceMeters.isPresent();
     double rawVisionDistanceMeters = visionDistanceMeters.orElse(Double.NaN);
-    double adjustedVisionDistanceMeters =
-        usingVisionDistance
-            ? rawVisionDistanceMeters * ShooterConstants.AutoAim.kVisionDistanceScale
-                + ShooterConstants.AutoAim.kVisionDistanceBiasMeters
-            : Double.NaN;
+    double adjustedVisionDistanceMeters = usingVisionDistance
+        ? rawVisionDistanceMeters * ShooterConstants.AutoAim.kVisionDistanceScale
+            + ShooterConstants.AutoAim.kVisionDistanceBiasMeters
+        : Double.NaN;
 
-    double distanceMeters =
-        usingVisionDistance ? adjustedVisionDistanceMeters : odometryDistanceMeters;
+    double distanceMeters = usingVisionDistance ? adjustedVisionDistanceMeters : odometryDistanceMeters;
     double clampedDistance = MathUtil.clamp(distanceMeters, minDistanceMeters, maxDistanceMeters);
 
     double pivotSetpoint = pivotMap.get(clampedDistance);
@@ -143,8 +139,9 @@ public class AutoAimShooter extends Command {
   }
 
   // public Command shootertuned(double shooterTargetRpm) {
-  //   return Commands.parallel(
-  //       shooter.setShooterSpeedWithTargetRpm(ShooterConstants.Top.kOutSpeed, shooterTargetRpm),
-  //       Commands.sequence(Commands.waitSeconds(1.0), feeder.feedFuel()));
+  // return Commands.parallel(
+  // shooter.setShooterSpeedWithTargetRpm(ShooterConstants.Top.kOutSpeed,
+  // shooterTargetRpm),
+  // Commands.sequence(Commands.waitSeconds(1.0), feeder.feedFuel()));
   // }
 }

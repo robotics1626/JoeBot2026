@@ -45,15 +45,13 @@ public class ShooterIOTalon implements ShooterIO {
             .withKS(ShooterConstants.PID.kShooterS)
             .withKV(ShooterConstants.PID.kShooterV);
 
-    BaseShooterConfigs.CurrentLimits =
-        new CurrentLimitsConfigs()
-            .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
-            .withSupplyCurrentLimitEnable(true);
+    BaseShooterConfigs.CurrentLimits = new CurrentLimitsConfigs()
+        .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
+        .withSupplyCurrentLimitEnable(true);
 
-    BaseShooterConfigs.MotorOutput =
-        new MotorOutputConfigs()
-            .withNeutralMode(NeutralModeValue.Coast)
-            .withInverted(InvertedValue.Clockwise_Positive);
+    BaseShooterConfigs.MotorOutput = new MotorOutputConfigs()
+        .withNeutralMode(NeutralModeValue.Coast)
+        .withInverted(InvertedValue.Clockwise_Positive);
 
     var shooterLeaderConfigurator = mShooterLeader.getConfigurator();
     shooterLeaderConfigurator.apply(BaseShooterConfigs);
@@ -66,21 +64,18 @@ public class ShooterIOTalon implements ShooterIO {
     // Shroud configurations
 
     var BaseShroudConfigs = new TalonFXConfiguration();
-    BaseShroudConfigs.Slot0 =
-        new Slot0Configs()
-            .withKP(ShooterConstants.PID.kShroudP)
-            .withKI(ShooterConstants.PID.kShroudI)
-            .withKD(ShooterConstants.PID.kShooterD);
+    BaseShroudConfigs.Slot0 = new Slot0Configs()
+        .withKP(ShooterConstants.PID.kShroudP)
+        .withKI(ShooterConstants.PID.kShroudI)
+        .withKD(ShooterConstants.PID.kShooterD);
 
-    BaseShroudConfigs.CurrentLimits =
-        new CurrentLimitsConfigs()
-            .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
-            .withSupplyCurrentLimitEnable(true);
+    BaseShroudConfigs.CurrentLimits = new CurrentLimitsConfigs()
+        .withSupplyCurrentLimit(Current.ofRelativeUnits(30, Amps))
+        .withSupplyCurrentLimitEnable(true);
 
-    BaseShroudConfigs.MotorOutput =
-        new MotorOutputConfigs()
-            .withNeutralMode(NeutralModeValue.Coast)
-            .withInverted(InvertedValue.CounterClockwise_Positive);
+    BaseShroudConfigs.MotorOutput = new MotorOutputConfigs()
+        .withNeutralMode(NeutralModeValue.Coast)
+        .withInverted(InvertedValue.CounterClockwise_Positive);
 
     var shroudConfigurator = mShroudController.getConfigurator();
     shroudConfigurator.apply(BaseShroudConfigs);
@@ -92,8 +87,7 @@ public class ShooterIOTalon implements ShooterIO {
     mShooterFollower.setControl(
         new Follower(
             mShooterLeader.getDeviceID(),
-            MotorAlignmentValue
-                .Opposed)); // ag - is there another method where i dont have to set control?
+            MotorAlignmentValue.Opposed)); // ag - is there another method where i dont have to set control?
   }
 
   @Override

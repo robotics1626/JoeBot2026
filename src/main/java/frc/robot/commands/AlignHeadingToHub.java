@@ -12,7 +12,10 @@ import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.ThrottleLog;
 import java.util.function.DoubleSupplier;
 
-/** Aligns the robot's heading to face the hub while allowing the driver to translate. */
+/**
+ * Aligns the robot's heading to face the hub while allowing the driver to
+ * translate.
+ */
 public class AlignHeadingToHub extends Command {
   private final Drive drive;
   private final PIDController headingController;
@@ -60,13 +63,11 @@ public class AlignHeadingToHub extends Command {
         });
 
     // Calculate rotation command
-    double rotationSpeed =
-        headingController.calculate(robotPose.getRotation().getRadians(), targetYaw);
-    rotationSpeed =
-        MathUtil.clamp(
-            rotationSpeed,
-            -drive.getMaxAngularSpeedRadPerSec(),
-            drive.getMaxAngularSpeedRadPerSec());
+    double rotationSpeed = headingController.calculate(robotPose.getRotation().getRadians(), targetYaw);
+    rotationSpeed = MathUtil.clamp(
+        rotationSpeed,
+        -drive.getMaxAngularSpeedRadPerSec(),
+        drive.getMaxAngularSpeedRadPerSec());
 
     // HAZAAA BAZOOKA
 
@@ -77,8 +78,7 @@ public class AlignHeadingToHub extends Command {
     double ySpeed = strafeSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
 
     // Build field-relative speeds
-    ChassisSpeeds speeds =
-        ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotationSpeed, drive.getRotation());
+    ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotationSpeed, drive.getRotation());
 
     // Command the drive
     drive.runVelocity(speeds);
@@ -91,6 +91,6 @@ public class AlignHeadingToHub extends Command {
 
   @Override
   public boolean isFinished() {
-    return false; // Run until trigger released
+    return false;
   }
 }
