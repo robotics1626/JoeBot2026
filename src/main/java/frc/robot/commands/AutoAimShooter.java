@@ -148,4 +148,13 @@ public class AutoAimShooter extends Command {
   // shooterTargetRpm),
   // Commands.sequence(Commands.waitSeconds(1.0), feeder.feedFuel()));
   // }
+  public boolean isAtTargetRpm() {
+    double leaderRpm = shooter.getLeaderRPM();
+    double followerRpm = shooter.getFollowerRPM();
+    double targetRpm = shooterRpmMap.get(shooter.getShroud());
+
+    // Check if both leader and follower are within the tolerance of the target RPM
+    return Math.abs(leaderRpm - targetRpm) < ShooterConstants.Control.kDashboardMaxTargetRpm
+        && Math.abs(followerRpm - targetRpm) < ShooterConstants.Control.kDashboardMaxTargetRpm;
+  }
 }

@@ -72,13 +72,13 @@ public final class ShooterConstants {
     // testing
 
     public static final double[] kDistanceMeters = {
-      .86, 1.76, 2.60, 2.84, 2.94, 3.70, 4.72, 5.01, 5.73
+      .86, 1.76, 2.18, 2.60, 2.84, 2.94, 3.19, 3.70, 4.72, 5.01, 5.73
     };
 
-    public static final double[] kPivotPosition = {11, 18, 28, 19, 22, 31, 33, 34.3, 37.5};
+    public static final double[] kPivotPosition = {11, 18, 25, 28, 19, 22, 24, 31, 33, 34.3, 37.5};
 
     public static final double[] kShooterTargetRpm = {
-      2800, 3200, 3150, 3263, 3400, 3566, 3750, 3800, 3950
+      2800, 3200, 2930, 3150, 3263, 3400, 3050, 3566, 3750, 3800, 3950
     };
   }
 }
