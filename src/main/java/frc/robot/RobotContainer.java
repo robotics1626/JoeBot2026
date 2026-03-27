@@ -45,6 +45,7 @@ import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -193,7 +194,10 @@ public class RobotContainer {
             true));
     NamedCommands.registerCommand("IndexFlow", indexer.indexFlow());
     // Configure the button bindings
-    configureButtonBindings();
+    // Use configureButtonBindings() for two-controller setup (default)
+    // Use configureButtonBindingsOneController() for single-controller setup
+    // configureButtonBindings();
+    configureButtonBindingsOneController();
   }
 
   /**
@@ -358,11 +362,142 @@ public class RobotContainer {
   }
 
   /**
+   * Configure button bindings for single-controller operation. One operator controls both drive and
+   * all subsystems (shooter, indexer, intake).
+   *
+   * <p>Control Scheme:
+   *
+   * <ul>
+   *   <li>Left Stick X/Y: Drive translation (forward/backward, left/right)
+   *   <li>Right Stick X: Drive rotation
+   *   <li>Right Stick Y: Shooter RPM selection (push up for higher RPM)
+   *   <li>A Button: Shoot at current setpoint
+   *   <li>B Button: Index + Intake
+   *   <li>X Button: Stop with X pattern
+   *   <li>Y Button: Rotate to 0° heading
+   *   <li>Left Bumper: Reverse (ohShit + intake out)
+   *   <li>Left Trigger: Index flow + intake
+   *   <li>Right Bumper: Feed to shooter
+   *   <li>Right Trigger: Align to hub + auto aim
+   *   <li>POV Up/Down: Increase/decrease shroud angle
+   *   <li>POV Left: Set shroud to 0°
+   *   <li>POV Right: Set shroud to 13°
+   *   <li>Start/Back: Increment/decrement shroud angle (alternative)
+   * </ul>
+   */
+  private void configureButtonBindingsOneController() {
+    CommandXboxController solo = driver; // Reuse driver controller for one-controller mode
+
+    // Default command: field-relative drive with right stick rotation
+    solo.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+
+    RobotModeTriggers.teleop()
+        .whileTrue(
+            new HeadingDrive(
+                drive,
+                () -> applyLeftDeadband(solo.getLeftX()),
+                () -> applyLeftDeadband(solo.getLeftY()),
+                () -> -applyRightDeadband(solo.getRightX()),
+                () -> -applyRightDeadband(solo.getRightY()),
+                MaxSpeed,
+                MaxAngularRate,
+                90));
+
+    // A Button: Shoot at current test RPM
+    solo.a()
+        .whileTrue(shooter.shoot(testShooterRPM).alongWith(indexer.feed()))
+        .onFalse(indexer.stopFeedRunOnce());
+
+    // B Button: Index + Intake
+    solo.b().whileTrue(indexer.index().alongWith(intake.intake()));
+
+    // Y Button: Reset gyro to 0°
+    solo.y()
+        .onTrue(
+            Commands.runOnce(
+                    () ->
+                        drive.setPose(
+                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+                    drive)
+                .ignoringDisable(true))
+        .onTrue(
+            new HeadingDrive(
+                drive,
+                () -> applyLeftDeadband(solo.getLeftX()),
+                () -> applyLeftDeadband(solo.getLeftY()),
+                () -> -applyRightDeadband(solo.getRightX()),
+                () -> -applyRightDeadband(solo.getRightY()),
+                MaxSpeed,
+                MaxAngularRate,
+                90));
+
+    // Right Trigger: Align to hub + auto aim
+    solo.rightTrigger()
+        .whileTrue(
+            new AlignHeadingToHub(
+                    drive,
+                    () -> -applyLeftDeadband(solo.getLeftY()),
+                    () -> -applyLeftDeadband(solo.getLeftX()),
+                    true)
+                .alongWith(new AutoAimShooter(drive, vision, shooter)))
+        .onFalse(
+            new HeadingDrive(
+                drive,
+                () -> applyLeftDeadband(solo.getLeftX()),
+                () -> applyLeftDeadband(solo.getLeftY()),
+                () -> -applyRightDeadband(solo.getRightX()),
+                () -> -applyRightDeadband(solo.getRightY()),
+                MaxSpeed,
+                MaxAngularRate,
+                90));
+
+    // Left Bumper: Reverse all (ohShit + intake out)
+    solo.leftBumper().whileTrue(indexer.ohShit().alongWith(intake.out()));
+
+    // Left Trigger: Index flow + intake
+    solo.leftTrigger().whileTrue(indexer.indexFlow().alongWith(intake.intake()));
+
+    // Right Bumper: Feed to shooter
+    solo.rightBumper().whileTrue(indexer.feedRunOnce()).onFalse(indexer.stopFeedRunOnce());
+    solo.rightBumper()
+        .whileTrue(indexer.justIndexerRunOnce())
+        .onFalse(indexer.stopJustIndexerRunOnce());
+
+    // POV Controls: Shooter shroud angle
+    solo.povUp().onTrue(shooter.stepShroud(5));
+    solo.povDown().onTrue(shooter.stepShroud(-5));
+    solo.povLeft().onTrue(shooter.shroud(0));
+    solo.povRight().onTrue(shooter.shroud(13));
+
+    // Start Button: Increment shooter RPM
+    solo.start()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShooterRPM = Math.min(testShooterRPM + RPM_INCREMENT, RPM_MAX);
+                  Logger.recordOutput("OneController/TestShooterRPM", testShooterRPM);
+                }));
+
+    // Back Button: Decrement shooter RPM
+    solo.back()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  testShooterRPM = Math.max(testShooterRPM - RPM_INCREMENT, RPM_MIN);
+                  Logger.recordOutput("OneController/TestShooterRPM", testShooterRPM);
+                }));
+  }
+
+  /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return autoChooser.get();
+    // Get the auto command without resetting pose - this keeps current odometry
+    Command autoCommand = autoChooser.get();
+
+    // Return the auto command as-is (it will use the current pose as starting point)
+    return autoCommand;
   }
 }

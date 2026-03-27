@@ -119,9 +119,10 @@ public class Drive extends SubsystemBase {
     PhoenixOdometryThread.getInstance().start();
 
     // Configure AutoBuilder for PathPlanner
+    // Use a no-op pose reset to keep current odometry (don't reset to path start)
     AutoBuilder.configure(
         this::getPose,
-        this::setPose,
+        pose -> {}, // No-op: don't reset pose, keep current odometry
         this::getChassisSpeeds,
         this::runVelocity,
         new PPHolonomicDriveController(
