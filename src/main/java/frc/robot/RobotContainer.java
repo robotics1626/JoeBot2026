@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -189,9 +190,14 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
-    // Configure the button bindings
-    configureButtonBindings();
-  }
+        autoChooser.addOption("BBAll", new ParallelCommandGroup(
+            new AlignHeadingToHub(drive, () -> 0, () -> 0, false),
+            new AutoAimShooter(drive, vision, shooter)
+        ));
+
+        // Configure the button bindings
+        configureButtonBindings();
+    }
 
   /**
    * Apply deadband to left joystick input (0.2 deadband). Values within the deadband are set to 0,
