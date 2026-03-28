@@ -60,10 +60,12 @@ public class Indexer extends SubsystemBase {
     return startEnd(
         () -> {
           feederTargetRPM = 2000;
+          mIndexer.setSpeed(.40);
           mIndexer.setFeederRPM(feederTargetRPM);
         },
         () -> {
           feederTargetRPM = 0;
+          mIndexer.setSpeed(0);
           mIndexer.setFeeder(0);
         });
   }
