@@ -77,7 +77,7 @@ public class AutoAimShooter extends Command {
     double shooterTargetRpm = shooterRpmMap.get(clampedDistance);
 
     // Directly set shooter values (don't use Commands since this command already owns shooter)
-    shooter.setShroudDegrees(pivotSetpoint + 7);
+    shooter.setShroudDegrees(pivotSetpoint + 5);
 
     // Clamp shooter RPM to valid range
     double clampedRpm =

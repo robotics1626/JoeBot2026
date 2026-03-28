@@ -86,7 +86,7 @@ public class AlignHeadingToHub extends Command {
     drive.runVelocity(speeds);
     // Update lookingAtHub based on threshold of robots diff from heading to hub
     double angleError = Math.abs(headingController.getPositionError());
-    lookingAtHub = angleError < 0.1; // ~5.7 degrees threshold
+    lookingAtHub = angleError < 0.01; // ~5.7 degrees threshold
   }
 
   @Override
