@@ -35,8 +35,16 @@ public class Shooter extends SubsystemBase {
     mShooter.setSpeedRPM(rpm);
   }
 
+  public void stopShooter() {
+    mShooter.setSpeed(0);
+  }
+
   public void setShroudDegrees(double degrees) {
     mShooter.setShroud(degrees);
+  }
+
+  public void zeroShroud() {
+    mShooter.setShroud(0);
   }
 
   public double getShroud() {
