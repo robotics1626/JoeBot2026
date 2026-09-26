@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 // import edu.wpi.first.wpilibj2.command.Command;
 // import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.util.AllianceFlipUtil;
 import java.util.function.DoubleSupplier;
 
 public class HeadingDrive extends Command {
@@ -22,9 +23,6 @@ public class HeadingDrive extends Command {
 
   // PID controller for heading control
   private final PIDController headingController;
-
-  // Deadband threshold for joysticks
-  private static final double DEADBAND = 0.1;
 
   // Maximum speeds
   private final double maxSpeed;
@@ -84,17 +82,19 @@ public class HeadingDrive extends Command {
   @Override
   public void initialize() {
     // Start with current heading as target
-    targetHeading = drivetrain.getRotation();
+    targetHeading = getDriverRelativeHeading();
     lastHeading = targetHeading;
   }
 
   @Override
   public void execute() {
-    // Get joystick inputs with deadband
-    double xSpeed = applyDeadband(-leftY.getAsDouble(), DEADBAND) * maxSpeed;
-    double ySpeed = applyDeadband(-leftX.getAsDouble(), DEADBAND) * maxSpeed;
-    double rightJoyX = applyDeadband(rightX.getAsDouble(), DEADBAND);
-    double rightJoyY = applyDeadband(-rightY.getAsDouble(), DEADBAND);
+    // Get joystick inputs. The suppliers are expected to already have a deadband applied
+    // (RobotContainer does this). Applying a second deadband here used to squash the stick
+    // response so half stick only gave ~30% speed.
+    double xSpeed = -leftY.getAsDouble() * maxSpeed;
+    double ySpeed = -leftX.getAsDouble() * maxSpeed;
+    double rightJoyX = rightX.getAsDouble();
+    double rightJoyY = -rightY.getAsDouble();
 
     // Calculate rotation speed
     double rotationSpeed;
@@ -115,7 +115,7 @@ public class HeadingDrive extends Command {
     }
 
     // Use PID to rotate toward target heading
-    Rotation2d currentHeading = drivetrain.getRotation();
+    Rotation2d currentHeading = getDriverRelativeHeading();
     // Detect abrupt heading resets (for example, when seedFieldCentric is run).
     // If a large jump is observed and the user is not actively commanding
     // the right stick, update the stored targetHeading to the new heading
@@ -141,8 +141,7 @@ public class HeadingDrive extends Command {
 
     // Build chassis speeds from field-relative inputs and send to drivetrain
     ChassisSpeeds speeds =
-        ChassisSpeeds.fromFieldRelativeSpeeds(
-            xSpeed, ySpeed, rotationSpeed, drivetrain.getRotation());
+        ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotationSpeed, currentHeading);
     drivetrain.runVelocity(speeds);
   }
 
@@ -152,11 +151,11 @@ public class HeadingDrive extends Command {
     drivetrain.stop();
   }
 
-  /** Apply deadband to joystick input */
-  private double applyDeadband(double value, double deadband) {
-    if (Math.abs(value) < deadband) {
-      return 0.0;
-    }
-    return (value - Math.copySign(deadband, value)) / (1.0 - deadband);
+  /**
+   * Robot heading as seen from the driver station. The pose estimator heading is in the standard
+   * blue-origin field frame, so on red alliance the driver is facing the opposite way (180 deg).
+   */
+  private Rotation2d getDriverRelativeHeading() {
+    return AllianceFlipUtil.apply(drivetrain.getRotation());
   }
 }

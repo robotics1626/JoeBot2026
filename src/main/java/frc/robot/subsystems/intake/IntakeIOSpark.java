@@ -25,6 +25,10 @@ public class IntakeIOSpark implements IntakeIO {
     followerConfigs.inverted(true);
     followerConfigs.follow(intakeLeader, true);
     followerConfigs.smartCurrentLimit(60);
+
+    // This config was built but never applied, so the follower motor was never told to follow.
+    intakeFollower.configure(
+        followerConfigs, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   @Override

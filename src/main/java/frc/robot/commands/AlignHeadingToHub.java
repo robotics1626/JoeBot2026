@@ -40,6 +40,13 @@ public class AlignHeadingToHub extends Command {
   }
 
   @Override
+  public void initialize() {
+    // Clear integral windup / stale state from the last time this command ran
+    headingController.reset();
+    lookingAtHub = false;
+  }
+
+  @Override
   public void execute() {
     // Get robot pose
     Pose2d robotPose = drive.getPose();
@@ -78,15 +85,17 @@ public class AlignHeadingToHub extends Command {
     double xSpeed = forwardSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
     double ySpeed = strafeSupplier.getAsDouble() * (hinter ? hinteredSpeed : maxSpeed);
 
-    // Build field-relative speeds
+    // Driver inputs are relative to the driver station (same as HeadingDrive), so on red alliance
+    // rotate by 180 deg to convert them into the blue-origin field frame.
     ChassisSpeeds speeds =
-        ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotationSpeed, drive.getRotation());
+        ChassisSpeeds.fromFieldRelativeSpeeds(
+            xSpeed, ySpeed, rotationSpeed, AllianceFlipUtil.apply(drive.getRotation()));
 
     // Command the drive
     drive.runVelocity(speeds);
     // Update lookingAtHub based on threshold of robots diff from heading to hub
-    double angleError = Math.abs(headingController.getPositionError());
-    lookingAtHub = angleError < 0.01; // ~5.7 degrees threshold
+    double angleError = Math.abs(headingController.getError());
+    lookingAtHub = angleError < 0.1; // ~5.7 degrees threshold
   }
 
   @Override

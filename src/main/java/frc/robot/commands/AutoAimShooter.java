@@ -60,7 +60,8 @@ public class AutoAimShooter extends Command {
         AllianceFlipUtil.apply(FieldConstants.Hub.blueCenter).getTranslation();
     double odometryDistanceMeters = robotPose.getTranslation().getDistance(hubCenter);
 
-    boolean usingVisionDistance = visionDistanceMeters.isPresent();
+    boolean usingVisionDistance =
+        ShooterConstants.AutoAim.kUseVisionTagDistance && visionDistanceMeters.isPresent();
     double rawVisionDistanceMeters = visionDistanceMeters.orElse(Double.NaN);
     double adjustedVisionDistanceMeters =
         usingVisionDistance
@@ -149,12 +150,6 @@ public class AutoAimShooter extends Command {
   // Commands.sequence(Commands.waitSeconds(1.0), feeder.feedFuel()));
   // }
   public boolean isAtTargetRpm() {
-    double leaderRpm = shooter.getLeaderRPM();
-    double followerRpm = shooter.getFollowerRPM();
-    double targetRpm = shooterRpmMap.get(shooter.getShroud());
-
-    // Check if both leader and follower are within the tolerance of the target RPM
-    return Math.abs(leaderRpm - targetRpm) < ShooterConstants.Control.kDashboardMaxTargetRpm
-        && Math.abs(followerRpm - targetRpm) < ShooterConstants.Control.kDashboardMaxTargetRpm;
+    return shooter.isAtTargetRPM();
   }
 }

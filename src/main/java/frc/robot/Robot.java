@@ -7,7 +7,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.util.ThrottleLog;
@@ -26,6 +25,8 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
+  // Must be a field: creating a new ThrottleLog every loop reset its counter, so it never logged.
+  private final ThrottleLog targetRpmLog = new ThrottleLog(10);
 
   public Robot() {
     // Record metadata
@@ -70,8 +71,6 @@ public class Robot extends LoggedRobot {
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
     robotContainer = new RobotContainer();
-
-    SmartDashboard.putBoolean("Match/RedAlliance", true);
   }
 
   /** This function is called periodically during all modes. */
@@ -88,11 +87,10 @@ public class Robot extends LoggedRobot {
     // the Command-based framework to work.
     CommandScheduler.getInstance().run();
 
-    new ThrottleLog(10)
-        .log(
-            () -> {
-              Logger.recordOutput("Current Target RPM", robotContainer.testShooterRPM);
-            });
+    targetRpmLog.log(
+        () -> {
+          Logger.recordOutput("Current Target RPM", robotContainer.testShooterRPM);
+        });
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);

@@ -32,8 +32,14 @@ public class TunerConstants {
           .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
   // When using closed-loop control, the drive motor uses the control
   // output type specified by SwerveModuleConstants.DriveMotorClosedLoopOutput
+  //
+  // IMPORTANT: ModuleIOTalonFX sets SensorToMechanismRatio = kDriveGearRatio, so these gains are
+  // in WHEEL rotations/sec, not motor rotations/sec. The Tuner X default (kV = 0.124) is in motor
+  // units and was ~6x too weak here, which made the robot drive far slower than commanded.
+  // 0.75 ~= 0.124 * kDriveGearRatio. For best results, run "Drive Simple FF Characterization"
+  // from the auto chooser and paste the printed kS/kV here.
   private static final Slot0Configs driveGains =
-      new Slot0Configs().withKP(0.1).withKI(0).withKD(0).withKS(0).withKV(0.124);
+      new Slot0Configs().withKP(0.5).withKI(0).withKD(0).withKS(0).withKV(0.75);
 
   // The closed-loop output type to use for the steer motors;
   // This affects the PID/FF gains for the steer motors
@@ -65,9 +71,10 @@ public class TunerConstants {
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(Amps.of(20)) // Higher for drive
-                  .withStatorCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(20))
+                  // Note: ModuleIOTalonFX overwrites the drive stator limit with kSlipCurrent.
+                  // 20 A supply was starving the drive motors (weak acceleration); 40 A is a
+                  // common, brownout-safe value for Kraken drive motors.
+                  .withSupplyCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true));
   // .withSupplyCurrentLowerLimit(40)
   /* .withSupplyCurrentLowerTime(1.0)) */
@@ -95,8 +102,9 @@ public class TunerConstants {
 
   // Theoretical free speed (m/s) at 12 V applied output;
   // This needs to be tuned to your individual robot
-  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(15.68);
-  //   public static final LinearVelocity kSpeedAt12Volts = FeetPerSecond.of(32);
+  // (15.68 was previously entered here as METERS/sec, but it's the FEET/sec number. 15.68 ft/s is
+  // ~4.78 m/s, which matches a Kraken X60 at 6.03:1 with 4" wheels and the PathPlanner settings.)
+  public static final LinearVelocity kSpeedAt12Volts = FeetPerSecond.of(15.68);
 
   // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
   // This may need to be tuned to your individual robot

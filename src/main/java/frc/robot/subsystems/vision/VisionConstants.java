@@ -20,6 +20,14 @@ public class VisionConstants {
   public static AprilTagFieldLayout aprilTagLayout =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
+  // Limelight NetworkTables name. A Limelight ALWAYS publishes to a table named after its hostname,
+  // which is "limelight" by default or "limelight-<name>" if you set a hostname in the Limelight
+  // web
+  // UI (e.g. "limelight-gigglecam"). It is case-sensitive. The old value "GiggleCam" can never
+  // match, which is why no vision data was coming through. If this is wrong, the robot raises an
+  // alert listing the Limelight tables it can actually see.
+  public static String limelightName = "limelight";
+
   // Camera names, must match names configured on coprocessor
   public static String camera0Name = "camera_0";
   public static String camera1Name = "camera_1";

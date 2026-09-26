@@ -8,6 +8,7 @@ import frc.robot.util.ThrottleLog;
 public class Shooter extends SubsystemBase {
   private final ShooterIO mShooter;
   private final ThrottleLog tLog;
+  private double targetRPM = 0.0;
 
   public Shooter(ShooterIO shooter) {
     this.mShooter = shooter;
@@ -15,11 +16,16 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command shoot(double RPM) {
-    return startEnd(() -> mShooter.setSpeedRPM(RPM), () -> mShooter.setSpeed(0));
+    return startEnd(() -> setShooterRPM(RPM), this::stopShooter);
   }
 
   public Command shootPrecent(double precent) {
-    return startEnd(() -> mShooter.setSpeed(precent), () -> mShooter.setSpeed(0));
+    return startEnd(
+        () -> {
+          targetRPM = 0.0;
+          mShooter.setSpeed(precent);
+        },
+        this::stopShooter);
   }
 
   public Command shroud(double degrees) {
@@ -32,11 +38,26 @@ public class Shooter extends SubsystemBase {
 
   // Direct control methods for AutoAimShooter (without returning commands)
   public void setShooterRPM(double rpm) {
+    targetRPM = rpm;
     mShooter.setSpeedRPM(rpm);
   }
 
   public void stopShooter() {
+    targetRPM = 0.0;
     mShooter.setSpeed(0);
+  }
+
+  /** Last RPM commanded with {@link #setShooterRPM}, or 0 when stopped. */
+  public double getTargetRPM() {
+    return targetRPM;
+  }
+
+  /** True when a velocity target is set and both flywheels are within tolerance of it. */
+  public boolean isAtTargetRPM() {
+    double tolerance = ShooterConstants.Control.kAtTargetToleranceRpm;
+    return targetRPM > 0.0
+        && Math.abs(Math.abs(getLeaderRPM()) - targetRPM) < tolerance
+        && Math.abs(Math.abs(getFollowerRPM()) - targetRPM) < tolerance;
   }
 
   public void setShroudDegrees(double degrees) {
@@ -52,6 +73,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public void zero() {
+    targetRPM = 0.0;
     mShooter.zero();
   }
 

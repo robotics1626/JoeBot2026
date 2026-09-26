@@ -97,6 +97,8 @@ public class Drive extends SubsystemBase {
         new SwerveModulePosition(),
         new SwerveModulePosition()
       };
+  // Last speeds requested through runVelocity, for desired-vs-actual telemetry
+  private ChassisSpeeds desiredSpeeds = new ChassisSpeeds();
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
@@ -174,6 +176,7 @@ public class Drive extends SubsystemBase {
 
     // Log empty setpoint states when disabled
     if (DriverStation.isDisabled()) {
+      desiredSpeeds = new ChassisSpeeds();
       Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
@@ -187,14 +190,7 @@ public class Drive extends SubsystemBase {
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        SwerveModulePosition position = modules[moduleIndex].getOdometryPositions()[i];
-        // Negate distance only on red alliance (field-relative coordinate flip)
-        double distanceMeters = position.distanceMeters;
-        if (DriverStation.getAlliance().isPresent()
-            && DriverStation.getAlliance().get() == Alliance.Red) {
-          distanceMeters = -distanceMeters;
-        }
-        modulePositions[moduleIndex] = new SwerveModulePosition(distanceMeters, position.angle);
+        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
@@ -219,6 +215,31 @@ public class Drive extends SubsystemBase {
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
+
+    logSpeedTelemetry();
+  }
+
+  /** Logs desired vs. actual robot speed so you can see if the drive is keeping up. */
+  private void logSpeedTelemetry() {
+    ChassisSpeeds actualSpeeds = getChassisSpeeds();
+    double desiredLinear =
+        Math.hypot(desiredSpeeds.vxMetersPerSecond, desiredSpeeds.vyMetersPerSecond);
+    double actualLinear =
+        Math.hypot(actualSpeeds.vxMetersPerSecond, actualSpeeds.vyMetersPerSecond);
+
+    Logger.recordOutput("Drive/Speed/DesiredMetersPerSec", desiredLinear);
+    Logger.recordOutput("Drive/Speed/ActualMetersPerSec", actualLinear);
+    Logger.recordOutput("Drive/Speed/ErrorMetersPerSec", desiredLinear - actualLinear);
+    Logger.recordOutput(
+        "Drive/Speed/DesiredRotationDegPerSec",
+        Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond));
+    Logger.recordOutput(
+        "Drive/Speed/ActualRotationDegPerSec", Math.toDegrees(actualSpeeds.omegaRadiansPerSecond));
+    // Percent of max speed, handy for checking the stick-to-speed mapping
+    Logger.recordOutput(
+        "Drive/Speed/DesiredPercentOfMax", 100.0 * desiredLinear / getMaxLinearSpeedMetersPerSec());
+    Logger.recordOutput(
+        "Drive/Speed/ActualPercentOfMax", 100.0 * actualLinear / getMaxLinearSpeedMetersPerSec());
   }
 
   /**
@@ -227,6 +248,8 @@ public class Drive extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public void runVelocity(ChassisSpeeds speeds) {
+    desiredSpeeds = speeds;
+
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
@@ -247,6 +270,7 @@ public class Drive extends SubsystemBase {
 
   /** Runs the drive in a straight line with the specified drive output. */
   public void runCharacterization(double output) {
+    desiredSpeeds = new ChassisSpeeds(); // Open loop, no speed target
     for (int i = 0; i < 4; i++) {
       modules[i].runCharacterization(output);
     }

@@ -59,9 +59,20 @@ public final class ShooterConstants {
     public static final double kTargetEpsilonRpm = 1e-6;
     public static final double kDashboardDefaultTargetRpm = 3500.0;
     public static final double kDashboardMaxTargetRpm = 5500.0;
+    /** How close (RPM) both flywheels must be to the target to count as "at speed". */
+    public static final double kAtTargetToleranceRpm = 100.0;
   }
 
   public final class AutoAim {
+    /**
+     * If true, AutoAimShooter uses the Limelight's distance to the visible hub tag. If false it
+     * uses the pose estimator's distance to the hub CENTER (which is corrected by vision anyway).
+     * The tables below were tuned with the pose-estimator distance (the tag distance was never
+     * being published), and tag distance != hub-center distance, so leave this false unless you
+     * retune.
+     */
+    public static final boolean kUseVisionTagDistance = false;
+
     public static final double kVisionDistanceScale =
         1.0d; // Tuning parameter for vision distance; may need to be
     // adjusted based on real-world

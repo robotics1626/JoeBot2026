@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -30,7 +29,6 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AcrossPassing;
 import frc.robot.commands.AlignHeadingToHub;
@@ -54,7 +52,9 @@ import frc.robot.subsystems.shooter.ShooterIOTalon;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionIO;
+import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
+import frc.robot.util.AllianceFlipUtil;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -96,7 +96,6 @@ public class RobotContainer {
   private final CommandXboxController operator = new CommandXboxController(1);
 
   private final AlignHeadingToHub autoAlignHeadingToHub;
-  private final AutoAimShooter auto_autoAimShooter;
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -119,8 +118,7 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive::addVisionMeasurement,
-                new frc.robot.subsystems.vision.VisionIOLimelight(
-                    "GiggleCam", () -> drive.getRotation()));
+                new VisionIOLimelight(VisionConstants.limelightName, drive::getRotation));
 
         // aimbot = new AutoAimShooter(drive, vision, shooter);
         // The ModuleIOTalonFXS implementation provides an example implementation for
@@ -171,7 +169,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         // (Use same number of dummy implementations as the real robot)
-        vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
+        vision = new Vision(drive::addVisionMeasurement, new VisionIO() {});
         // aimbot = new AutoAimShooter(drive, vision, shooter);
         break;
     }
@@ -187,7 +185,6 @@ public class RobotContainer {
     NamedCommands.registerCommand("IndexFlow", indexer.indexFlow());
 
     autoAlignHeadingToHub = new AlignHeadingToHub(drive, () -> 0, () -> 0, false);
-    auto_autoAimShooter = new AutoAimShooter(drive, vision, shooter);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -212,8 +209,7 @@ public class RobotContainer {
         "BBAll",
         new SequentialCommandGroup(
             autoAlignHeadingToHub.until(autoAlignHeadingToHub.isLookingAtHub()),
-            new WaitUntilCommand(() -> auto_autoAimShooter.isAtTargetRpm())
-                .deadlineFor(makeAutoAimShooter()),
+            new WaitUntilCommand(shooter::isAtTargetRPM).deadlineFor(makeAutoAimShooter()),
             makeAutoAimShooter().withTimeout(2.0),
             new ParallelDeadlineGroup(
                 new WaitCommand(5.0), makeAutoAimShooter(), indexer.indexFlow())));
@@ -259,7 +255,8 @@ public class RobotContainer {
   private void configureButtonBindings() {
     // Driver
 
-    // default to red alliance
+    // Driver-relative drive. HeadingDrive handles red/blue alliance automatically using the
+    // alliance reported by the Driver Station.
     drive.setDefaultCommand(
         new HeadingDrive(
             drive,
@@ -295,38 +292,18 @@ public class RobotContainer {
     //         90));
     // }
 
-    final Trigger redAlliance =
-        new Trigger(() -> SmartDashboard.getBoolean("Match/RedAlliance", true) == true);
-
-    redAlliance
-        .onTrue(
-            new HeadingDrive(
-                drive,
-                () -> applyLeftDeadband(driver.getLeftX()),
-                () -> applyLeftDeadband(driver.getLeftY()),
-                () -> applyRightDeadband(driver.getRightX()),
-                () -> applyRightDeadband(driver.getRightY()),
-                MaxSpeed,
-                MaxAngularRate,
-                90))
-        .onFalse(
-            new HeadingDrive(
-                drive,
-                () -> applyLeftDeadband(driver.getLeftX()),
-                () -> applyLeftDeadband(driver.getLeftY()),
-                () -> applyRightDeadband(driver.getRightX()),
-                () -> applyRightDeadband(-driver.getRightY()),
-                MaxSpeed,
-                MaxAngularRate,
-                90));
-
+    // Reset heading: point the robot straight away from your driver station, then press A.
+    // On red alliance "away from the driver" is 180 deg in the (blue-origin) field frame, which is
+    // what vision / PathPlanner / hub aiming all expect.
     driver
         .a()
         .onTrue(
             Commands.runOnce(
-                    () -> {
-                      drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero));
-                    },
+                    () ->
+                        drive.setPose(
+                            new Pose2d(
+                                drive.getPose().getTranslation(),
+                                AllianceFlipUtil.apply(Rotation2d.kZero))),
                     drive)
                 .ignoringDisable(true));
 
@@ -345,8 +322,8 @@ public class RobotContainer {
         .whileTrue(
             new AlignHeadingToHub(
                 drive,
-                () -> applyLeftDeadband(driver.getLeftX()),
-                () -> applyLeftDeadband(driver.getLeftY()),
+                () -> -applyLeftDeadband(driver.getLeftY()),
+                () -> -applyLeftDeadband(driver.getLeftX()),
                 true));
 
     driver
@@ -354,8 +331,8 @@ public class RobotContainer {
         .whileTrue(
             new AlignHeadingToHub(
                     drive,
-                    () -> applyLeftDeadband(driver.getLeftX()),
-                    () -> applyLeftDeadband(driver.getLeftY()),
+                    () -> -applyLeftDeadband(driver.getLeftY()),
+                    () -> -applyLeftDeadband(driver.getLeftX()),
                     true)
                 .alongWith(new AutoAimShooter(drive, vision, shooter)));
     // Operator

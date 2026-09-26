@@ -70,7 +70,7 @@ public class ShooterIOTalon implements ShooterIO {
         new Slot0Configs()
             .withKP(ShooterConstants.PID.kShroudP)
             .withKI(ShooterConstants.PID.kShroudI)
-            .withKD(ShooterConstants.PID.kShooterD);
+            .withKD(ShooterConstants.PID.kShroudD);
 
     BaseShroudConfigs.CurrentLimits =
         new CurrentLimitsConfigs()
@@ -100,8 +100,10 @@ public class ShooterIOTalon implements ShooterIO {
   public void setSpeedRPM(double rpm) {
     var request = new VelocityVoltage(AngularVelocity.ofRelativeUnits(rpm, RPM));
     double rps = AngularVelocity.ofRelativeUnits(rpm, RPM).in(RotationsPerSecond);
+    // kV is already applied by Slot0, so this is only logged (it used to also be passed as an
+    // extra feedforward, which applied kV twice).
     double feedForwardVolts = ShooterConstants.PID.kShooterV * rps;
-    mShooterLeader.setControl(request.withSlot(0).withFeedForward(feedForwardVolts));
+    mShooterLeader.setControl(request.withSlot(0));
     mShooterFollower.setControl(
         new Follower(mShooterLeader.getDeviceID(), MotorAlignmentValue.Opposed));
 
@@ -149,9 +151,9 @@ public class ShooterIOTalon implements ShooterIO {
 
   @Override
   public void moveShroud(double degrees) {
-    var lastRecordedPos = mShroudController.getPosition().getValue().in(Rotations);
-    mShroudController.setControl(
-        new PositionVoltage((lastRecordedPos + Angle.ofBaseUnits(degrees, Degrees).in(Rotations))));
+    // Go through setShroud so the 157.5:1 gear ratio (and feedforward) is applied. Previously the
+    // step skipped the gear ratio, so a 5 deg step only moved the shroud ~0.03 deg.
+    setShroud(getShroud() + degrees);
   }
 
   @Override
