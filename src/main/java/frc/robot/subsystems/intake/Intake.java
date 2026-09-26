@@ -11,12 +11,12 @@ public class Intake extends SubsystemBase {
   }
 
   public Command intake() {
-    return startEnd(() -> mIntake.run(.4), () -> mIntake.run(0));
+    return startEnd(() -> mIntake.run(1), () -> mIntake.run(0));
   }
 
   // boo!
 
   public Command out() {
-    return startEnd(() -> mIntake.run(-.3), () -> mIntake.run(0));
+    return startEnd(() -> mIntake.run(-1), () -> mIntake.run(0));
   }
 }

@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.Logger;
 public class Indexer extends SubsystemBase {
   private final IndexerIO mIndexer;
   private double feederTargetRPM = 0.0;
+  private final double indexerSpeed = .8;
 
   public Indexer(IndexerIO indexer) {
     this.mIndexer = indexer;
@@ -19,8 +20,8 @@ public class Indexer extends SubsystemBase {
   public Command index() {
     return startEnd(
         () -> {
-          mIndexer.setSpeed(.40);
-          feederTargetRPM = -2000;
+          mIndexer.setSpeed(indexerSpeed);
+          feederTargetRPM = -1000;
           mIndexer.setFeederRPM(feederTargetRPM);
         },
         () -> {
@@ -33,8 +34,8 @@ public class Indexer extends SubsystemBase {
   public Command indexFlow() {
     return startEnd(
         () -> {
-          mIndexer.setSpeed(.40);
-          feederTargetRPM = 2000;
+          mIndexer.setSpeed(indexerSpeed);
+          feederTargetRPM = 1000;
           mIndexer.setFeederRPM(feederTargetRPM);
         },
         () -> {
@@ -45,11 +46,11 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command justIndexer() {
-    return startEnd(() -> mIndexer.setSpeed(.40), () -> mIndexer.setSpeed(0));
+    return startEnd(() -> mIndexer.setSpeed(indexerSpeed), () -> mIndexer.setSpeed(0));
   }
 
   public Command justIndexerRunOnce() {
-    return runOnce(() -> mIndexer.setSpeed(.40));
+    return runOnce(() -> mIndexer.setSpeed(indexerSpeed));
   }
 
   public Command stopJustIndexerRunOnce() {
@@ -59,8 +60,8 @@ public class Indexer extends SubsystemBase {
   public Command feed() {
     return startEnd(
         () -> {
-          feederTargetRPM = 2000;
-          mIndexer.setSpeed(.40);
+          feederTargetRPM = 1000;
+          mIndexer.setSpeed(indexerSpeed);
           mIndexer.setFeederRPM(feederTargetRPM);
         },
         () -> {
@@ -70,10 +71,22 @@ public class Indexer extends SubsystemBase {
         });
   }
 
+  public Command feedOnly() {
+    return startEnd(
+        () -> {
+          feederTargetRPM = 1000;
+          mIndexer.setFeederRPM(feederTargetRPM);
+        },
+        () -> {
+          feederTargetRPM = 0;
+          mIndexer.setFeeder(0);
+        });
+  }
+
   public Command feedRunOnce() {
     return runOnce(
         () -> {
-          feederTargetRPM = 2000;
+          feederTargetRPM = 1000;
           mIndexer.setFeederRPM(feederTargetRPM);
         });
   }
@@ -87,7 +100,7 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command ohShit() {
-    return startEnd(() -> mIndexer.setSpeed(-.40), () -> mIndexer.setSpeed(0));
+    return startEnd(() -> mIndexer.setSpeed(-indexerSpeed), () -> mIndexer.setSpeed(0));
   }
 
   public BooleanSupplier untilTimer(Time time) {

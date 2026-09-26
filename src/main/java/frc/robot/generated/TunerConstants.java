@@ -89,13 +89,14 @@ public class TunerConstants {
   private static final Pigeon2Configuration pigeonConfigs = null;
 
   // CAN bus that the devices are located on;
+
   // All swerve devices must share the same CAN bus
   public static final CANBus kCANBus = new CANBus("", "./logs/example.hoot");
 
   // Theoretical free speed (m/s) at 12 V applied output;
   // This needs to be tuned to your individual robot
-  //   public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(32);
-  public static final LinearVelocity kSpeedAt12Volts = FeetPerSecond.of(16.4);
+  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(15.68);
+  //   public static final LinearVelocity kSpeedAt12Volts = FeetPerSecond.of(32);
 
   // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
   // This may need to be tuned to your individual robot
