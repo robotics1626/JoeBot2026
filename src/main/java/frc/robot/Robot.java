@@ -7,6 +7,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.util.ThrottleLog;
@@ -67,6 +68,11 @@ public class Robot extends LoggedRobot {
 
     // Start AdvantageKit logger
     Logger.start();
+
+    // Show which build is running so you can confirm the latest code was actually deployed
+    SmartDashboard.putString("Build/GitSHA", BuildConstants.GIT_SHA.substring(0, 7));
+    SmartDashboard.putString("Build/BuildDate", BuildConstants.BUILD_DATE);
+    SmartDashboard.putBoolean("Build/UncommittedChanges", BuildConstants.DIRTY == 1);
 
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
