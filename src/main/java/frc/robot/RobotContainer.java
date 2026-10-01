@@ -341,12 +341,6 @@ public class RobotContainer {
     driver.a().onTrue(resetHeading());
     driver.b().onTrue(resetHeading());
 
-    driver.b()
-        .onTrue(Commands.runOnce(
-            () -> {
-                drive.
-            }, null))
-
     driver.x().whileTrue(indexer.feedOnly());
 
     driver
@@ -365,20 +359,6 @@ public class RobotContainer {
                 () -> -applyLeftDeadband(driver.getLeftY()),
                 () -> -applyLeftDeadband(driver.getLeftX()),
                 true));
-    driver
-        .leftTrigger()
-        .whileTrue(
-            Commands.runOnce(
-                () -> {
-                  shooter.setShooterRPM(4500);
-                  shooter.setShroudDegrees(55);
-                }))
-        .onFalse(
-            Commands.runOnce(
-                () -> {
-                  shooter.stopShooter();
-                  shooter.zeroShroud();
-                }));
 
     driver
         .rightTrigger()
