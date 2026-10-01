@@ -14,9 +14,11 @@ import static edu.wpi.first.units.Units.Seconds;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -98,7 +100,7 @@ public class RobotContainer {
   private final AlignHeadingToHub autoAlignHeadingToHub;
 
   // Dashboard inputs
-  private final LoggedDashboardChooser<Command> autoChooser;
+  private LoggedDashboardChooser<Command> autoChooser;
 
   private PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -153,7 +155,7 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive::addVisionMeasurement,
-                new VisionIOPhotonVisionSim(
+                new VisionIOPhotonVisionSim( // ->
                     "GiggleCam", VisionConstants.robotToCamera0, drive::getPose));
 
         // aimbot = new AutoAimShooter(drive, vision, shooter);
@@ -174,6 +176,17 @@ public class RobotContainer {
         break;
     }
 
+    autoAlignHeadingToHub = new AlignHeadingToHub(drive, () -> 0, () -> 0, false);
+
+    // Configure autos
+    configureAutos();
+
+    // Configure the button bindings
+    configureButtonBindings();
+  }
+
+  /** Registers named commands and builds the auto chooser. */
+  private void configureAutos() {
     NamedCommands.registerCommand("AutoAimShooter", new AutoAimShooter(drive, vision, shooter));
     NamedCommands.registerCommand(
         "AlignHeadingToHub",
@@ -183,8 +196,6 @@ public class RobotContainer {
             () -> -applyLeftDeadband(driver.getLeftX()),
             true));
     NamedCommands.registerCommand("IndexFlow", indexer.indexFlow());
-
-    autoAlignHeadingToHub = new AlignHeadingToHub(drive, () -> 0, () -> 0, false);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -214,8 +225,41 @@ public class RobotContainer {
             new ParallelDeadlineGroup(
                 new WaitCommand(5.0), makeAutoAimShooter(), indexer.indexFlow())));
 
-    // Configure the button bindings
-    configureButtonBindings();
+    addPathAuto("SweepLeft", "SweepPathRCLeft");
+    addPathAuto("SweepRight", "SweepPathRC");
+  }
+
+  /**
+   * Adds a chooser option that resets odometry to the path's start pose (flipped for red alliance)
+   * and then follows the path. A path that fails to load is reported without affecting others.
+   */
+  private void addPathAuto(String name, String pathName) {
+    try {
+      PathPlannerPath path = PathPlannerPath.fromPathFile(pathName);
+      autoChooser.addOption(
+          name,
+          AutoBuilder.resetOdom(path.getStartingHolonomicPose().orElseThrow())
+              .andThen(AutoBuilder.followPath(path)));
+    } catch (Exception e) {
+      DriverStation.reportError(
+          "Failed to load path " + pathName + ": " + e.getMessage(), e.getStackTrace());
+    }
+  }
+
+  /**
+   * Resets the robot's heading so "forward" is straight away from the driver station. On red
+   * alliance that is 180 deg in the (blue-origin) field frame, which is what vision, PathPlanner
+   * and hub aiming all expect. Keeps the current X/Y position. Works while disabled
+   */
+  private Command resetHeading() {
+    return Commands.runOnce(
+            () ->
+                drive.setPose(
+                    new Pose2d(
+                        drive.getPose().getTranslation(),
+                        AllianceFlipUtil.apply(Rotation2d.kZero))),
+            drive)
+        .ignoringDisable(true);
   }
 
   private Command makeAutoAimShooter() {
@@ -292,20 +336,10 @@ public class RobotContainer {
     //         90));
     // }
 
-    // Reset heading: point the robot straight away from your driver station, then press A.
-    // On red alliance "away from the driver" is 180 deg in the (blue-origin) field frame, which is
-    // what vision / PathPlanner / hub aiming all expect.
-    driver
-        .a()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(
-                                drive.getPose().getTranslation(),
-                                AllianceFlipUtil.apply(Rotation2d.kZero))),
-                    drive)
-                .ignoringDisable(true));
+    // Reset gyro/heading: point the robot straight away from your driver station, then press A or
+    // B.
+    driver.a().onTrue(resetHeading());
+    driver.b().onTrue(resetHeading());
 
     driver.x().whileTrue(indexer.feedOnly());
 

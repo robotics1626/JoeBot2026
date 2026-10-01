@@ -26,7 +26,14 @@ public class VisionConstants {
   // UI (e.g. "limelight-gigglecam"). It is case-sensitive. The old value "GiggleCam" can never
   // match, which is why no vision data was coming through. If this is wrong, the robot raises an
   // alert listing the Limelight tables it can actually see.
-  public static String limelightName = "limelight";
+  public static String limelightName = "limelight"; // Hostname on the camera is unset (default)
+
+  // The Limelight is plugged into the roboRIO over USB, so it sits on a private USB link the driver
+  // station can't reach. The RIO forwards ports 5800-5809 to it (see VisionIOLimelight), so the
+  // stream is viewed through the RIO's address instead. 172.29.0.1 is the USB IP of an LL3/LL3G/LL4
+  // (an LL2 uses 172.28.0.1).
+  public static String limelightUsbIp = "172.29.0.1";
+  public static String roborioIp = "10.16.26.2";
 
   // Camera names, must match names configured on coprocessor
   public static String camera0Name = "camera_0";

@@ -7,10 +7,14 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.HttpCamera;
+import edu.wpi.first.cscore.HttpCamera.HttpCameraKind;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
@@ -65,6 +69,27 @@ public class VisionIOLimelight implements VisionIO {
     megatag1Subscriber = table.getDoubleArrayTopic("botpose_wpiblue").subscribe(new double[] {});
     megatag2Subscriber =
         table.getDoubleArrayTopic("botpose_orb_wpiblue").subscribe(new double[] {});
+
+    // The Limelight is on USB, so only the RIO can reach it. Forward its web ports (5800 stream,
+    // 5801 web UI, etc.) through the RIO so the driver station can reach them at the RIO's address.
+    for (int port = 5800; port <= 5809; port++) {
+      PortForwarder.add(port, VisionConstants.limelightUsbIp, port);
+    }
+
+    // The Limelight's video is an MJPEG web stream (port 5800), NOT NetworkTables data. Registering
+    // it with CameraServer publishes its URLs under /CameraPublisher so Elastic can show it. The
+    // RIO's static IP comes first because mDNS (.local) names are unreliable on the FMS. Port 5800
+    // is in the FMS team-use range (5800-5810), so it is not blocked. The Limelight publishes its
+    // own /CameraPublisher/<name> entry pointing at its USB IP (unreachable from the driver
+    // station), so this one needs a different name or the two overwrite each other.
+    HttpCamera stream =
+        new HttpCamera(
+            name + "-rio",
+            new String[] {
+              "http://" + VisionConstants.roborioIp + ":5800", "http://roborio-1626-frc.local:5800"
+            },
+            HttpCameraKind.kMJPGStreamer);
+    CameraServer.addCamera(stream);
   }
 
   @Override
