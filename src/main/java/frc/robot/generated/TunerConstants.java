@@ -104,7 +104,7 @@ public class TunerConstants {
   // This needs to be tuned to your individual robot
   // (15.68 was previously entered here as METERS/sec, but it's the FEET/sec number. 15.68 ft/s is
   // ~4.78 m/s, which matches a Kraken X60 at 6.03:1 with 4" wheels and the PathPlanner settings.)
-  public static final LinearVelocity kSpeedAt12Volts = FeetPerSecond.of(15.68);
+  public static final LinearVelocity kSpeedAt12Volts = FeetPerSecond.of(67.68);
 
   // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
   // This may need to be tuned to your individual robot
